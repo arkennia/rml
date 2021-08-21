@@ -53,7 +53,7 @@ impl KNN {
     }
 
     /// Gets the number of unique labels.
-    fn get_num_labels(y: &Vec<i32>) -> usize {
+    fn get_num_labels(y: &[i32]) -> usize {
         let mut labels: Vec<i32> = Vec::new();
 
         for i in y {
@@ -67,14 +67,11 @@ impl KNN {
 
     /// Normalize the data given by the KNN's configured normalization setting.
     pub fn normalize_data(&mut self) {
-        if let None = self.normalize {
-            return;
-        } else {
-            let norm_type = self.normalize.as_ref().unwrap();
+        if let Some(n) = &self.normalize {
             self.x = self
                 .x
                 .iter()
-                .map(|xi| norm::normalize_vector(xi, &norm_type))
+                .map(|xi| norm::normalize_vector(xi, n))
                 .collect();
         }
     }
@@ -85,24 +82,30 @@ impl KNN {
     }
 
     /// Calculate the distance from `new_point` to all other points in the set.
-    pub fn calculate_distances(&self, new_point: &Vec<f64>) -> Vec<Point> {
+    pub fn calculate_distances(&self, new_point: &[f64]) -> Vec<Point> {
         let distance_fn = match self.distance {
             Some(distance::Distance::Manhattan) => distance::manhattan_distance,
             _ => distance::euclidean_distance,
         };
-        let mut distances: Vec<Point> = Vec::new();
+        // let mut distances: Vec<Point> = Vec::new();
 
-        for i in 0..self.x.len() {
-            distances.push(Point(self.y[i], distance_fn(&new_point, &self.x[i])));
-        }
-        distances
+        // for i in 0..self.x.len() {
+        //     distances.push(Point(self.y[i], distance_fn(&new_point, &self.x[i])));
+        // }
+        // distances
+
+        self.x
+            .iter()
+            .zip(self.y.iter())
+            .map(|(x, y)| Point(*y, distance_fn(new_point, x)))
+            .collect()
     }
 
     /// Predict the class of a point `x`.
     pub fn predict(&self, x: Vec<f64>) -> i32 {
         let x = match &self.normalize {
             None => x,
-            Some(n) => norm::normalize_vector(&x, &n),
+            Some(n) => norm::normalize_vector(&x, n),
         };
         let mut points = self.calculate_distances(&x);
         points.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
@@ -112,20 +115,18 @@ impl KNN {
         for i in 0..(self.k) as usize {
             predictions[points[i].0 as usize] += 1;
         }
-        KNN::get_max_value(predictions)
+        KNN::get_max_value(&predictions)
     }
 
     /// Get the class of the highest index.
-    fn get_max_value(predictions: Vec<i32>) -> i32 {
-        let mut highest_index = 0;
-
-        for i in 0..predictions.len() {
-            if predictions[highest_index] < predictions[i] {
-                highest_index = i;
-            }
-        }
-
-        highest_index as i32
+    fn get_max_value(predictions: &[i32]) -> i32 {
+        predictions
+            .iter()
+            .enumerate() // add index to the iterated items [a, b, c] -> [(0, a), (1, b), (2, c)]
+            .max_by_key(|(_, pred)| **pred) // take maximum by the actual item, not the index,
+            // `pred` has type `&&i32`, because of all the combinators, so we have to dereference twice
+            .map(|(idx, _)| idx) // Option::map - take tuple (idx, value) and transform it to just idx
+            .unwrap() as i32
     }
 }
 

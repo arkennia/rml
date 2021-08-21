@@ -4,7 +4,7 @@ pub enum Distance {
 }
 
 /// Calculate the euclidean distance between two points.
-pub fn euclidean_distance(p: &Vec<f64>, q: &Vec<f64>) -> f64 {
+pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
     let distance: f64 = q.iter().zip(p).map(|(&q, &p)| (f64::powi(q - p, 2))).sum();
 
     if distance == 0.0 {
@@ -15,7 +15,7 @@ pub fn euclidean_distance(p: &Vec<f64>, q: &Vec<f64>) -> f64 {
 }
 
 /// Calculate the manhattan distance between two points.
-pub fn manhattan_distance(p: &Vec<f64>, q: &Vec<f64>) -> f64 {
+pub fn manhattan_distance(p: &[f64], q: &[f64]) -> f64 {
     let distance: f64 = p.iter().zip(q).map(|(&p, &q)| (p - q).abs()).sum();
 
     distance
