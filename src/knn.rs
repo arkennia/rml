@@ -20,11 +20,14 @@ pub struct KNN {
 
 /// (class value, distance)
 #[derive(PartialEq, Debug)]
-pub struct Point(i32, f64);
+pub struct Point {
+    pub class: i32,
+    pub distance: f64,
+}
 
 impl PartialOrd for Point {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.1.partial_cmp(&other.1)
+        self.distance.partial_cmp(&other.distance)
     }
 }
 
@@ -97,7 +100,10 @@ impl KNN {
         self.x
             .iter()
             .zip(self.y.iter())
-            .map(|(x, y)| Point(*y, distance_fn(new_point, x)))
+            .map(|(x, y)| Point {
+                class: *y,
+                distance: distance_fn(new_point, x),
+            })
             .collect()
     }
 
@@ -113,7 +119,7 @@ impl KNN {
         let mut predictions = vec![0; self.num_labels];
 
         for i in 0..(self.k) as usize {
-            predictions[points[i].0 as usize] += 1;
+            predictions[points[i].class as usize] += 1;
         }
         KNN::get_max_value(&predictions)
     }
@@ -151,6 +157,6 @@ mod tests {
         let knn = KNN::new(5, p, vec![1], None, None);
 
         let q = knn.calculate_distances(&(vec![0.0, 0.0] as Vec<f64>));
-        assert_eq!(q[0].1, f64::from(8).sqrt());
+        assert_eq!(q[0].distance, f64::from(8).sqrt());
     }
 }
