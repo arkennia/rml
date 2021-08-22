@@ -2,7 +2,6 @@ use crate::math::distance;
 use crate::math::norm;
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::iter::FromIterator;
 
 /// KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
 #[derive(Debug)]
