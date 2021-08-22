@@ -59,7 +59,6 @@ impl KNN {
     }
 
     /// Gets the number of unique labels.
-    /// TODO Check if a hash set will work better.
     pub fn get_num_labels(y: &[i32]) -> usize {
         // let mut labels: Vec<i32> = Vec::new();
 
@@ -70,7 +69,7 @@ impl KNN {
         // }
 
         // labels.len()
-        let set: HashSet<i32> = HashSet::from_iter(y.iter().cloned());
+        let set: HashSet<i32> = y.iter().cloned().collect::<HashSet<_>>();
         set.len()
     }
 

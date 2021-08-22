@@ -24,7 +24,7 @@ pub fn get_num_labels(y: &[i32]) -> usize {
 }
 
 pub fn get_num_labels_hashset(y: &[i32]) -> usize {
-    let set: HashSet<i32> = HashSet::from_iter(y.iter().cloned());
+    let set: HashSet<i32> = y.iter().cloned().collect::<HashSet<_>>();
     set.len()
 }
 
