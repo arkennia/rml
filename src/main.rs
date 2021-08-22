@@ -1,6 +1,7 @@
 use rustml::knn;
 use rustml::math;
 use std::error::Error;
+use std::time::Instant;
 
 const TRAIN_FILE_NAME: &str = "./data/optdigits.tra";
 const TEST_FILE_NAME: &str = "./data/optdigits.tes";
@@ -32,6 +33,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let training_data = parse_csv(TRAIN_FILE_NAME)?;
     let testing_data = parse_csv(TEST_FILE_NAME)?;
 
+    let start = Instant::now();
+
     let knn = knn::KNN::new(
         5,
         training_data.0,
@@ -41,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // Find a better way to do this.
-    let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(&x)).collect();
+    let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(x)).collect();
 
     // let mut num_correct = 0;
 
@@ -57,7 +60,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         .filter(|(a, b)| *a == **b)
         .count();
 
-    println!("Accuracy: {}", (num_correct as f64) / (pred.len() as f64));
+    println!(
+        "Accuracy: {} Runtime: {}s",
+        (num_correct as f64) / (pred.len() as f64),
+        start.elapsed().as_secs_f64()
+    );
 
     Ok(())
 }

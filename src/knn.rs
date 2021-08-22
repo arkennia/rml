@@ -120,17 +120,17 @@ impl KNN {
     }
 
     /// Predict the class of a point `x`.
-    pub fn predict(&self, x: &Vec<f64>) -> i32 {
+    pub fn predict(&self, x: &[f64]) -> i32 {
         // match &self.normalize {
         //     None => x,
         //     Some(n) => norm::normalize_vector(x, n),
         // };
 
-        let mut norm_x: Vec<f64> = x.clone();
+        let mut norm_x: Vec<f64> = x.to_owned();
         if let Some(n) = &self.normalize {
             norm::normalize_vector(&mut norm_x, n);
         }
-        let mut points = self.calculate_distances(&x);
+        let mut points = self.calculate_distances(x);
         // points.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
         points.par_sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
