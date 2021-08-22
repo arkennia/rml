@@ -8,7 +8,7 @@ const TEST_FILE_NAME: &str = "./data/optdigits.tes";
 type CSVOutput = (Vec<Vec<f64>>, Vec<i32>);
 
 fn parse_csv(data: &str) -> Result<CSVOutput, Box<dyn Error>> {
-    let mut out_data: (Vec<Vec<f64>>, Vec<i32>) = (Vec::new(), Vec::new());
+    let mut out_data: CSVOutput = (Vec::new(), Vec::new());
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(data)?;

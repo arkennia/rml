@@ -1,8 +1,10 @@
 use crate::math::distance;
 use crate::math::norm;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 /// KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
+#[derive(Debug)]
 pub struct KNN {
     /// K-Nearest to analyze
     pub k: i32,
@@ -56,26 +58,27 @@ impl KNN {
     }
 
     /// Gets the number of unique labels.
-    fn get_num_labels(y: &[i32]) -> usize {
-        let mut labels: Vec<i32> = Vec::new();
+    /// TODO Check if a hash set will work better.
+    pub fn get_num_labels(y: &[i32]) -> usize {
+        // let mut labels: Vec<i32> = Vec::new();
 
-        for i in y {
-            if !labels.contains(i) {
-                labels.push(*i);
-            }
-        }
+        // for i in y {
+        //     if !labels.contains(i) {
+        //         labels.push(*i);
+        //     }
+        // }
 
-        labels.len()
+        // labels.len()
+        let set: HashSet<i32> = HashSet::from_iter(y.iter().cloned());
+        set.len()
     }
 
     /// Normalize the data given by the KNN's configured normalization setting.
     pub fn normalize_data(&mut self) {
         if let Some(n) = &self.normalize {
-            self.x = self
-                .x
-                .iter()
-                .map(|xi| norm::normalize_vector(xi, n))
-                .collect();
+            self.x
+                .iter_mut()
+                .for_each(|xi| norm::normalize_vector(xi, n));
         }
     }
 
@@ -109,17 +112,22 @@ impl KNN {
 
     /// Predict the class of a point `x`.
     pub fn predict(&self, x: Vec<f64>) -> i32 {
-        let x = match &self.normalize {
-            None => x,
-            Some(n) => norm::normalize_vector(&x, n),
-        };
+        // match &self.normalize {
+        //     None => x,
+        //     Some(n) => norm::normalize_vector(x, n),
+        // };
+
+        let mut norm_x: Vec<f64> = x.clone();
+        if let Some(n) = &self.normalize {
+            norm::normalize_vector(&mut norm_x, n);
+        }
         let mut points = self.calculate_distances(&x);
         points.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
         let mut predictions = vec![0; self.num_labels];
 
-        for i in 0..(self.k) as usize {
-            predictions[points[i].class as usize] += 1;
+        for i in &points[0..self.k as usize] {
+            predictions[i.class as usize] += 1;
         }
         KNN::get_max_value(&predictions)
     }

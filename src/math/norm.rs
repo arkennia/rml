@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Norm {
     L1,
     L2,
@@ -15,15 +16,13 @@ pub fn l1_norm(p: &[f64]) -> f64 {
     norm
 }
 
-pub fn normalize_vector(p: &[f64], norm_type: &Norm) -> Vec<f64> {
+pub fn normalize_vector(p: &mut [f64], norm_type: &Norm) {
     let norm = match norm_type {
         Norm::L1 => l1_norm(p),
         Norm::L2 => l2_norm(p),
     };
-    if norm == 0.0 {
-        vec![0.0; p.len()]
-    } else {
-        p.iter().map(|xi| xi / norm).collect()
+    if norm != 0.0 {
+        p.iter_mut().for_each(|xi| *xi /= norm);
     }
 }
 
@@ -48,7 +47,7 @@ mod tests {
     #[test]
     fn normalize_vector_test() {
         let mut p: Vec<f64> = vec![2.0, 2.0, 2.0];
-        p = normalize_vector(&p, &Norm::L2);
+        normalize_vector(&mut p, &Norm::L2);
         assert_eq!(p, vec![2.0 / f64::from(12).sqrt(); 3]);
     }
 }

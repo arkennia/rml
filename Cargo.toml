@@ -3,7 +3,18 @@ name = "rustml"
 version = "0.1.0"
 edition = "2018"
 
+[profile.release]
+debug = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 csv = "1.1"
+
+[dev-dependencies]
+criterion = { version = "*", features = ["html_reports"] }
+rand = "0.8"
+
+[[bench]]
+name = "num_labels"
+harness = false
