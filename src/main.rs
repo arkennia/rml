@@ -46,13 +46,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Find a better way to do this.
     let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(x)).collect();
 
-    // let mut num_correct = 0;
-
-    // for i in 0..pred.len() {
-    //     if pred[i] == testing_data.1[i] {
-    //         num_correct += 1;
-    //     }
-    // }
     let num_correct = pred
         .iter()
         .cloned()
