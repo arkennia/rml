@@ -32,11 +32,12 @@ pub fn get_num_labels_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("Get Num Labels");
 
     for i in DATASIZES {
-        group.bench_with_input(BenchmarkId::new("Vector", i), &i, |b, i| {
-            b.iter(|| get_num_labels(black_box(&create_data(*i))))
+        let data = create_data(i);
+        group.bench_with_input(BenchmarkId::new("Vector", i), &i, |b, _i| {
+            b.iter(|| get_num_labels(black_box(&data)))
         });
-        group.bench_with_input(BenchmarkId::new("Hashset", i), &i, |b, i| {
-            b.iter(|| get_num_labels_hashset(black_box(&create_data(*i))))
+        group.bench_with_input(BenchmarkId::new("Hashset", i), &i, |b, _i| {
+            b.iter(|| get_num_labels_hashset(black_box(&data)))
         });
     }
 }

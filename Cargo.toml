@@ -10,11 +10,21 @@ debug = true
 
 [dependencies]
 csv = "1.1"
+rayon = "1.5.1"
 
 [dev-dependencies]
 criterion = { version = "*", features = ["html_reports"] }
 rand = "0.8"
+rayon = "1.5.1"
 
 [[bench]]
 name = "num_labels"
+harness = false
+
+[[bench]]
+name = "calculate_distance"
+harness = false
+
+[[bench]]
+name = "practical"
 harness = false

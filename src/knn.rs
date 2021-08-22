@@ -1,5 +1,6 @@
 use crate::math::distance;
 use crate::math::norm;
+use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
@@ -99,9 +100,18 @@ impl KNN {
         // }
         // distances
 
+        // self.x
+        //     .iter()
+        //     .zip(self.y.iter())
+        //     .map(|(x, y)| Point {
+        //         class: *y,
+        //         distance: distance_fn(new_point, x),
+        //     })
+        //     .collect()
+
         self.x
-            .iter()
-            .zip(self.y.iter())
+            .par_iter()
+            .zip(self.y.par_iter())
             .map(|(x, y)| Point {
                 class: *y,
                 distance: distance_fn(new_point, x),
@@ -110,7 +120,7 @@ impl KNN {
     }
 
     /// Predict the class of a point `x`.
-    pub fn predict(&self, x: Vec<f64>) -> i32 {
+    pub fn predict(&self, x: &Vec<f64>) -> i32 {
         // match &self.normalize {
         //     None => x,
         //     Some(n) => norm::normalize_vector(x, n),
@@ -121,7 +131,8 @@ impl KNN {
             norm::normalize_vector(&mut norm_x, n);
         }
         let mut points = self.calculate_distances(&x);
-        points.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+        // points.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+        points.par_sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
 
         let mut predictions = vec![0; self.num_labels];
 

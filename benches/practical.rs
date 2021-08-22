@@ -1,3 +1,5 @@
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rand::prelude::*;
 use rustml::knn;
 use rustml::math;
 use std::error::Error;
@@ -27,10 +29,10 @@ fn parse_csv(data: &str) -> Result<CSVOutput, Box<dyn Error>> {
     Ok(out_data)
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // Format: (Vectors of each feature, Vector of class label)
-    let training_data = parse_csv(TRAIN_FILE_NAME)?;
-    let testing_data = parse_csv(TEST_FILE_NAME)?;
+pub fn pratical_benchmark(c: &mut Criterion) {
+    let training_data = parse_csv(TRAIN_FILE_NAME).unwrap();
+    let testing_data = parse_csv(TEST_FILE_NAME).unwrap();
+    let ind: usize = rand::thread_rng().gen_range(0..testing_data.0.len());
 
     let knn = knn::KNN::new(
         5,
@@ -39,25 +41,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         None,
         Some(math::norm::Norm::L2),
     );
-
-    // Find a better way to do this.
-    let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(&x)).collect();
-
-    // let mut num_correct = 0;
-
-    // for i in 0..pred.len() {
-    //     if pred[i] == testing_data.1[i] {
-    //         num_correct += 1;
-    //     }
-    // }
-    let num_correct = pred
-        .iter()
-        .cloned()
-        .zip(&testing_data.1)
-        .filter(|(a, b)| *a == **b)
-        .count();
-
-    println!("Accuracy: {}", (num_correct as f64) / (pred.len() as f64));
-
-    Ok(())
+    c.bench_function("Pratical", |b| {
+        b.iter(|| knn.predict(black_box(&testing_data.0[ind])));
+    });
 }
+
+criterion_group!(benches, pratical_benchmark);
+criterion_main!(benches);
