@@ -16,4 +16,6 @@ Citation: Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://
 # Features to be Added
 * Preprocessing and data loading
 * Naive Bayes Classifier
+* Expand tests
+* Expand documentation
 * ...
