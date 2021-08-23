@@ -6,7 +6,7 @@ edition = "2018"
 license = "LGPL-3.0-or-later"
 readme = "README.md"
 repository = "https://github.com/jmanly56/rustml"
-keywords = ["machine learning", "ai", "knn", "scientific", "data analysis"]
+keywords = ["machine", "ai", "knn", "scientific", "learning"]
 categories = ["mathematics", "science", "text-processing"]
 
 [profile.release]
