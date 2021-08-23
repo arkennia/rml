@@ -21,7 +21,7 @@ rustml = "0.1.0"
 
 # License
 
-The code provided here is licensed under the GPL 3.0 License. A copy of this license is contained within the github repository.
+The program provided here is licensed under the Lesser GPL 3.0 License. A copy of this license is contained within the github repository.
 
 
 # Citation
