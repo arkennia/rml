@@ -60,7 +60,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(math::norm::Norm::L2),
     );
 
-    // Find a better way to do this.
     let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(x)).collect();
 
     let num_correct = pred

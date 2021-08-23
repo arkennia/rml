@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rustml.  If not, see <https://www.gnu.org/licenses/>.
 
+//! The math module for computing necessary values.
+
 pub mod distance;
 
 pub mod norm;

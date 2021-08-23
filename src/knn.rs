@@ -17,7 +17,45 @@
 
 //! Implementation for K-Nearest Neighbors.
 
-//! Allows for
+/*!
+Allows for predicting data based on a KNN search.
+A full, working example is contained in the `examples/knn` directory.
+
+# Example
+```rust
+// Collect and parse data to a format consistent with:
+// type CSVOutput = (Vec<Vec<f64>>, Vec<i32>);
+
+let training_data: CSVOutput = (Vec::new, Vec::new);
+let testing_data: CSVOutput = (Vec::new, Vec::new);
+
+// Create a new KNN struct.
+let knn = knn::KNN::new(
+5, // 5-nearest
+training_data.0, // x
+training_data.1, // y
+None, // Default distance(euclidean)
+Some(math::norm::Norm::L2), // L2 Normalization
+);
+
+// Get a prediction for each point of the testing data.
+let pred: Vec<i32> = testing_data.0.iter().map(|x| knn.predict(x)).collect();
+
+// Count the number that were predicted correctly.
+let num_correct = pred
+    .iter()
+    .cloned()
+    .zip(&testing_data.1)
+    .filter(|(a, b)| *a == **b)
+    .count();
+
+println!(
+    "Accuracy: {}",
+    (num_correct as f64) / (pred.len() as f64)
+);
+
+```
+!*/
 
 use crate::math::distance;
 use crate::math::norm;
@@ -26,26 +64,30 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 /// KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
+/// It is *highly recommended* to not change values inside of this struct manually. Always
+/// create a new one using ::new.
 #[derive(Debug)]
 pub struct KNN {
     /// K-Nearest to analyze
     pub k: i32,
     /// Features
-    x: Vec<Vec<f64>>,
+    pub x: Vec<Vec<f64>>,
     /// Class labels for each feature.
-    y: Vec<i32>,
+    pub y: Vec<i32>,
     /// Number of labels.
-    num_labels: usize,
+    pub num_labels: usize,
     /// Type of distance to use.
     pub distance: Option<distance::Distance>,
     /// The type of normalization, or None.
     pub normalize: Option<norm::Norm>,
 }
 
-/// (class value, distance)
+/// A data point.
 #[derive(PartialEq, Debug)]
 pub struct Point {
+    /// The class label for the point.
     pub class: i32,
+    /// The distance from the test point.
     pub distance: f64,
 }
 
@@ -80,12 +122,14 @@ impl KNN {
     }
 
     /// Gets the number of unique labels.
+    /// This function is called when ::new is called. You can access the value using
+    /// the value contained in the KNN struct.
     pub fn get_num_labels(y: &[i32]) -> usize {
         let set: HashSet<i32> = y.iter().cloned().collect::<HashSet<_>>();
         set.len()
     }
 
-    /// Normalize the data given by the KNN's configured normalization setting.
+    /// Normalize the data contain in `self` given by the KNN's configured normalization setting.
     pub fn normalize_data(&mut self) {
         if let Some(n) = &self.normalize {
             self.x
@@ -100,6 +144,7 @@ impl KNN {
     }
 
     /// Calculate the distance from `new_point` to all other points in the set.
+    /// Note: new_point must be the same dimensions as the data passed into ::new.norm
     pub fn calculate_distances(&self, new_point: &[f64]) -> Vec<Point> {
         let distance_fn = match self.distance {
             Some(distance::Distance::Manhattan) => distance::manhattan_distance,
