@@ -1,4 +1,4 @@
-# rustml
+# RML
 A straightforward library for machine learning in Rust.
 
 # Features
@@ -9,7 +9,7 @@ A straightforward library for machine learning in Rust.
 
 ```toml
 [dependencies]
-rustml = "0.1.0"
+rml = "0.1.0"
 ```
 
 # Features to be Added
