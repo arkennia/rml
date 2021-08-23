@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 license-file = "LICENSE"
 readme = "README.md"
+repository = "https://github.com/jmanly56/rustml"
 
 [profile.release]
 debug = true
@@ -13,6 +14,5 @@ debug = true
 [dependencies]
 csv = "1.1"
 rayon = "1.5.1"
-chrono = "0.4"
 
 
