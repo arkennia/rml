@@ -18,4 +18,7 @@ debug = true
 csv = "1.1"
 rayon = "1.5.1"
 
+[[example]]
+name = "knn"
+
 
