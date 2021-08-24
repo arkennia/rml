@@ -6,7 +6,7 @@ edition = "2018"
 license = "LGPL-3.0-or-later"
 readme = "README.md"
 repository = "https://github.com/jmanly56/rml"
-keywords = ["machine", "ai", "knn", "scientific", "learning"]
+keywords = ["machine-learning", "ai", "knn", "scientific"]
 categories = ["mathematics", "science", "text-processing"]
 documentation = "https://docs.rs/rml"
 

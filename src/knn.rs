@@ -144,7 +144,7 @@ impl KNN {
     }
 
     /// Calculate the distance from `new_point` to all other points in the set.
-    /// Note: new_point must be the same dimensions as the data passed into ::new.norm
+    /// Note: new_point must be the same dimensions as the data passed into ::new.
     pub fn calculate_distances(&self, new_point: &[f64]) -> Vec<Point> {
         let distance_fn = match self.distance {
             Some(distance::Distance::Manhattan) => distance::manhattan_distance,
