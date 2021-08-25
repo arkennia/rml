@@ -15,4 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
+//! Allows for preprocessing of csv files to a format that the models in this library can use.
+
 pub mod parser;

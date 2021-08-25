@@ -24,10 +24,16 @@ A full, working example is contained in the `examples/knn` directory.
 # Example
 ```rust
 // Collect and parse data to a format consistent with:
-// type CSVOutput = (Vec<Vec<f64>>, Vec<i32>);
 
-let training_data: CSVOutput = (Vec::new, Vec::new);
-let testing_data: CSVOutput = (Vec::new, Vec::new);
+use rml::knn;
+use rml::math;
+type CSVOutput = (Vec<Vec<f64>>, Vec<i32>);
+
+// THESE ARE PLACEHOLDERS.
+// You must load your own data first.
+
+let training_data: CSVOutput = (Vec::new(), Vec::new());
+let testing_data: CSVOutput = (Vec::new(), Vec::new());
 
 // Create a new KNN struct.
 let knn = knn::KNN::new(

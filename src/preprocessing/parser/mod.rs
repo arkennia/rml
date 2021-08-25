@@ -15,4 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
+//! Module that allows for loading of CSV files.
+
 pub mod csv;

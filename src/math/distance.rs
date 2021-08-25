@@ -29,6 +29,7 @@ pub enum Distance {
 /// Calculate the euclidean distance between two points.
 /// # Example
 /// ```rust
+/// use rml::math::distance::euclidean_distance;
 /// let x: Vec<f64> = vec![5.0, 6.0];
 /// let y: Vec<f64> = vec![-7.0, 11.0];
 /// println!("{}", euclidean_distance(&x, &y))
@@ -46,6 +47,7 @@ pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
 /// Calculate the Manhattan distance between two points.
 /// # Example
 /// ```rust
+/// use rml::math::distance::manhattan_distance;
 /// let x: Vec<f64> = vec![5.0, 6.0];
 /// let y: Vec<f64> = vec![-7.0, 11.0];
 /// println!("{}", manhattan_distance(&x, &y))
