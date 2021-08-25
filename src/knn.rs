@@ -72,7 +72,7 @@ use std::collections::HashSet;
 /// KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
 /// It is *highly recommended* to not change values inside of this struct manually. Always
 /// create a new one using ::new.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KNN {
     /// K-Nearest to analyze
     pub k: i32,
@@ -133,6 +133,19 @@ impl KNN {
     pub fn get_num_labels(y: &[i32]) -> usize {
         let set: HashSet<i32> = y.iter().cloned().collect::<HashSet<_>>();
         set.len()
+    }
+
+    /// Helper function to convert data that has integer based labels to floating point labels.
+    /// # Example
+    /// ```rust
+    /// use rml::knn::KNN;
+    /// let q: Vec<Vec<i32>> = vec![vec![2, 2]];
+    /// KNN::convert_to_f64(&q); // This will return the vector <2.0, 2.0>.
+    ///
+    pub fn convert_to_f64(xi32: &Vec<Vec<i32>>) -> Vec<Vec<f64>> {
+        xi32.iter()
+            .map(|x| x.iter().map(|val| *val as f64).collect())
+            .collect()
     }
 
     /// Normalize the data contain in `self` given by the KNN's configured normalization setting.
@@ -220,5 +233,13 @@ mod tests {
 
         let q = knn.calculate_distances(&(vec![0.0, 0.0] as Vec<f64>));
         assert!((q[0].distance - f64::from(8).sqrt()).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn convert_to_f64_test() {
+        let p: Vec<Vec<f64>> = vec![vec![2.0, 2.0]];
+        let q: Vec<Vec<i32>> = vec![vec![2, 2]];
+
+        assert_eq!(KNN::convert_to_f64(&q), p);
     }
 }
