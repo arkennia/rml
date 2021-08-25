@@ -19,55 +19,35 @@ use std::error::Error;
 use std::fmt::Debug;
 use std::str::FromStr;
 
+/// A tuple type containing (features, labels).
+///
+/// T is the type of feature, U is the type of the label.
 pub type CSVOutput<T, U> = (Vec<Vec<T>>, Vec<U>);
 
-// pub fn parse_csv_with_labels<T, U>(
-//     data: &str,
-//     has_headers: bool,
-// ) -> Result<CSVOutput<T, U>, Box<dyn Error>>
-// where
-//     T: FromStr + Debug,
-//     T::Err: Debug,
-//     U: FromStr + Debug,
-//     U::Err: Debug,
-// {
-//     let mut out_data: CSVOutput<T, U> = (Vec::new(), Vec::new());
-//     let mut reader = csv::ReaderBuilder::new()
-//         .has_headers(has_headers)
-//         .from_path(data)
-//         .expect("Error creating CSV reader.");
+/// Enum for where the class label is in the data.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClassPosition {
+    /// The class is the first entry in each line.
+    First,
+    /// The class is the last entry in each line.
+    Last,
+}
 
-//     for line in reader.records() {
-//         let result = line?;
-//         let mut line_data: (Vec<T>, U) = (
-//             Vec::new(),
-//             (result.get(result.len() - 1).unwrap())
-//                 .trim()
-//                 .parse()
-//                 .expect("Error getting class label."),
-//         );
-//         line_data.1 = (result.get(result.len() - 1).unwrap())
-//             .trim()
-//             .parse()
-//             .expect("Error getting class label.");
-//         for i in 0..result.len() - 1 {
-//             line_data.0.push(
-//                 (result.get(i).unwrap())
-//                     .trim()
-//                     .parse()
-//                     .expect("Error pushing data."),
-//             );
-//         }
-
-//         out_data.0.push(line_data.0);
-//         out_data.1.push(line_data.1);
-//     }
-//     Ok(out_data)
-// }
-
+/// Parses a csv that has labels either in the first or last position.
+///
+/// T is the type of feature, U is the type of the label.
+///
+/// # Example
+/// ```rust
+/// use rml::preprocessing::parser::csv;
+/// let str_data: csv::CSVOutput<String, i32> =
+///            csv::parse_csv_with_labels("./data/test_data/str_test.csv", false, csv::ClassPosition::Last)
+///                .expect("Error parsing csv.");
+///```
 pub fn parse_csv_with_labels<T, U>(
-    data: &str,
+    path: &str,
     has_headers: bool,
+    class_pos: ClassPosition,
 ) -> Result<CSVOutput<T, U>, Box<dyn Error>>
 where
     T: FromStr + Debug,
@@ -78,40 +58,52 @@ where
     let mut out_data: CSVOutput<T, U> = (Vec::new(), Vec::new());
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(has_headers)
-        .from_path(data)
+        .from_path(path)
         .expect("Error creating CSV reader.");
 
     reader.records().into_iter().for_each(|x| {
         let mut line = x.unwrap();
         line.trim();
-        out_data.1.push(process_label::<T, U>(&line));
-        out_data.0.push(process_features::<T>(&line));
+        out_data.1.push(process_label::<T, U>(&line, class_pos));
+        out_data.0.push(process_features::<T>(&line, class_pos));
     });
 
     Ok(out_data)
 }
 
-fn process_features<T>(line: &StringRecord) -> Vec<T>
+fn process_features<T>(line: &StringRecord, class_pos: ClassPosition) -> Vec<T>
 where
     T: FromStr,
     T::Err: Debug,
 {
     let mut features: Vec<T> = line.into_iter().map(|x| x.parse().unwrap()).collect();
-    features.pop();
+    if class_pos == ClassPosition::First {
+        features.remove(0);
+    } else {
+        features.pop();
+    }
     features
 }
 
-fn process_label<T, U>(line: &StringRecord) -> U
+fn process_label<T, U>(line: &StringRecord, class_pos: ClassPosition) -> U
 where
     T: FromStr + Debug,
     T::Err: Debug,
     U: FromStr + Debug,
     U::Err: Debug,
 {
-    let label = (line.get(line.len() - 1).unwrap())
-        .parse()
-        .expect("Error getting class label.");
-    label
+    // let label = (line.get(line.len() - 1).unwrap())
+    //     .parse()
+    //     .expect("Error getting class label.");
+    // label
+    match class_pos {
+        ClassPosition::First => (line.get(0).unwrap())
+            .parse()
+            .expect("Error getting class label."),
+        ClassPosition::Last => (line.get(line.len() - 1).unwrap())
+            .parse()
+            .expect("Error getting class label."),
+    }
 }
 
 #[cfg(test)]
@@ -122,7 +114,7 @@ mod tests {
     fn parse_csv_with_labels_test() {
         // Checks if strings load properly.
         let str_data: CSVOutput<String, i32> =
-            parse_csv_with_labels("./data/test_data/str_test.csv", false)
+            parse_csv_with_labels("./data/test_data/str_test.csv", false, ClassPosition::Last)
                 .expect("Error parsing csv.");
 
         assert_eq!(str_data.0.len(), 2);
@@ -132,9 +124,12 @@ mod tests {
         assert_eq!(str_data.1[0], 0);
 
         // Checks if floats load properly.
-        let str_data: CSVOutput<f64, i32> =
-            parse_csv_with_labels("./data/test_data/float_test.csv", false)
-                .expect("Error parsing csv.");
+        let str_data: CSVOutput<f64, i32> = parse_csv_with_labels(
+            "./data/test_data/float_test.csv",
+            false,
+            ClassPosition::Last,
+        )
+        .expect("Error parsing csv.");
 
         assert_eq!(str_data.0.len(), 2);
         assert_eq!(str_data.1.len(), 2);
