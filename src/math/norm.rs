@@ -72,14 +72,14 @@ mod tests {
     fn l2_norm_test() {
         let p: Vec<f64> = vec![2.0, 2.0, 2.0];
 
-        assert_eq!(l2_norm(&p), f64::from(12).sqrt());
+        assert!((l2_norm(&p) - f64::from(12).sqrt()).abs() < f64::EPSILON);
     }
 
     #[test]
     fn l1_norm_test() {
         let p: Vec<f64> = vec![2.0, -2.0, 2.0];
 
-        assert_eq!(l1_norm(&p), f64::from(6));
+        assert!((l1_norm(&p) - f64::from(6)).abs() < f64::EPSILON);
     }
 
     #[test]

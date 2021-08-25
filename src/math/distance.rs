@@ -66,12 +66,12 @@ mod tests {
         let x: Vec<f64> = vec![5.0, 6.0];
         let y: Vec<f64> = vec![-7.0, 11.0];
 
-        assert_eq!(euclidean_distance(&x, &y), 13.0);
+        assert!((euclidean_distance(&x, &y) - 13.0).abs() < f64::EPSILON);
 
         let x: Vec<f64> = vec![0.0, 0.0, 0.0];
         let y: Vec<f64> = vec![1.0, 1.0, 1.0];
 
-        assert_eq!(euclidean_distance(&x, &y), f64::from(3).sqrt());
+        assert!((euclidean_distance(&x, &y) - f64::from(3).sqrt()).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -79,16 +79,16 @@ mod tests {
         let x: Vec<f64> = vec![0.0, 0.0];
         let y: Vec<f64> = vec![1.0, 1.0];
 
-        assert_eq!(manhattan_distance(&x, &y), 2.0);
+        assert!((manhattan_distance(&x, &y) - 2.0).abs() < f64::EPSILON);
 
         let x: Vec<f64> = vec![0.0, 0.0];
         let y: Vec<f64> = vec![-1.0, 1.0];
 
-        assert_eq!(manhattan_distance(&x, &y), 2.0);
+        assert!((manhattan_distance(&x, &y) - 2.0).abs() < f64::EPSILON);
 
         let x: Vec<f64> = vec![0.0, 0.0, 0.0];
         let y: Vec<f64> = vec![1.0, 1.0, 1.0];
 
-        assert_eq!(manhattan_distance(&x, &y), 3.0);
+        assert!((manhattan_distance(&x, &y) - 3.0).abs() < f64::EPSILON);
     }
 }

@@ -15,19 +15,4 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
-/*!
-Machine learning algorithms and tools.
-
-rml contains machine learning algorithms and other tools to assist in solving
-machine learning problems using Rust.
-
-# Examples
-See the provided examples directory for how to use the corresponding algorithms and tools.
-
-!*/
-
-pub mod knn;
-pub mod math;
-
-#[cfg(feature = "preprocessing")]
-pub mod preprocessing;
+pub mod csv;

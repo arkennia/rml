@@ -200,6 +200,7 @@ mod tests {
         let p: Vec<Vec<f64>> = vec![vec![2.0, 2.0, 2.0]];
         let mut knn = KNN::new(5, p, vec![1], None, Some(norm::Norm::L2));
         knn.normalize_data();
+
         assert_eq!(
             knn.data().0.clone(),
             vec![vec![2.0 / f64::from(12).sqrt(); 3]]
@@ -212,6 +213,6 @@ mod tests {
         let knn = KNN::new(5, p, vec![1], None, None);
 
         let q = knn.calculate_distances(&(vec![0.0, 0.0] as Vec<f64>));
-        assert_eq!(q[0].distance, f64::from(8).sqrt());
+        assert!((q[0].distance - f64::from(8).sqrt()).abs() < f64::EPSILON);
     }
 }
