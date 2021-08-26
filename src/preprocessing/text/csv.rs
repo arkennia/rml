@@ -14,6 +14,10 @@
 
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
+
+//! Enables loading of data from CSV files.
+//!
+//! Supports data with and without labels.
 use csv::StringRecord;
 use std::error::Error;
 use std::fmt::Debug;
@@ -39,7 +43,7 @@ pub enum ClassPosition {
 ///
 /// # Example
 /// ```rust
-/// use rml::preprocessing::parser::csv;
+/// use rml::preprocessing::text::csv;
 /// let str_data: csv::CSVOutput<String, i32> =
 ///            csv::parse_csv_with_labels("./data/test_data/str_test.csv", false, csv::ClassPosition::Last)
 ///                .expect("Error parsing csv.");
@@ -64,9 +68,32 @@ where
     reader.records().into_iter().for_each(|x| {
         let mut line = x.unwrap();
         line.trim();
+        // Must be called in this order. `process_features` removes the class from the data.
         out_data.1.push(process_label::<T, U>(&line, class_pos));
         out_data.0.push(process_features::<T>(&line, class_pos));
     });
+
+    Ok(out_data)
+}
+
+/// Retrieves the data from a csv file that is unlabeled.
+pub fn parse_csv_without_labels<T>(
+    path: &str,
+    has_headers: bool,
+) -> Result<Vec<Vec<T>>, Box<dyn Error>>
+where
+    T: FromStr + Debug,
+    T::Err: Debug,
+{
+    let mut out_data: Vec<Vec<T>> = Vec::new();
+    let mut reader = csv::ReaderBuilder::new()
+        .has_headers(has_headers)
+        .from_path(path)
+        .expect("Error creating CSV reader.");
+
+    for i in reader.records() {
+        out_data.push(i?.into_iter().map(|x| x.trim().parse().unwrap()).collect());
+    }
 
     Ok(out_data)
 }
@@ -136,5 +163,23 @@ mod tests {
 
         assert_eq!(str_data.0[1], vec![20.24, 3.823, 10.2]);
         assert_eq!(str_data.1[1], 1);
+    }
+
+    #[test]
+    fn parse_csv_without_labels_test() {
+        let str_data: Vec<Vec<f64>> =
+            parse_csv_without_labels("./data/test_data/float_test.csv", false)
+                .expect("Error parsing csv.");
+
+        assert_eq!(str_data[1].len(), 4);
+
+        assert_eq!(str_data[1], vec![20.24, 3.823, 10.2, 1.0]);
+
+        let str_data: Vec<Vec<String>> =
+            parse_csv_without_labels("./data/test_data/one_line_strings.csv", false)
+                .expect("Error parsing csv.");
+
+        assert_eq!(str_data.len(), 3);
+        assert_eq!(str_data[2][0], String::from("This is also a string"));
     }
 }

@@ -17,4 +17,4 @@
 
 //! Allows for preprocessing of csv files to a format that the models in this library can use.
 
-pub mod parser;
+pub mod text;

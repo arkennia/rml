@@ -142,7 +142,7 @@ impl KNN {
     /// let q: Vec<Vec<i32>> = vec![vec![2, 2]];
     /// KNN::convert_to_f64(&q); // This will return the vector <2.0, 2.0>.
     ///
-    pub fn convert_to_f64(xi32: &Vec<Vec<i32>>) -> Vec<Vec<f64>> {
+    pub fn convert_to_f64(xi32: &[Vec<i32>]) -> Vec<Vec<f64>> {
         xi32.iter()
             .map(|x| x.iter().map(|val| *val as f64).collect())
             .collect()

@@ -86,7 +86,7 @@ where
         .expect("Error creating CSV reader.");
 
     reader.records().into_iter().for_each(|x| {
-        out_data.1.push(process_label::<T, U>(&x.as_ref().unwrap()));
+        out_data.1.push(process_label::<T, U>(x.as_ref().unwrap()));
         out_data.0.push(process_features::<T>(&x.unwrap()));
     });
 
