@@ -11,3 +11,12 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
+use std::error::Error;
+
+pub mod simple_tokenizer;
+
+pub trait Tokenize {
+    fn create_tokens(&self) -> Vec<String>;
+    fn encode(&self, input: &[String]) -> Result<Vec<i32>, Box<dyn Error>>;
+    fn decode(&self, input: &[i32]) -> Result<Vec<String>, Box<dyn Error>>;
+}
