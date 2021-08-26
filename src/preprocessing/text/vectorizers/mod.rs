@@ -12,13 +12,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-// You should have received a copy of the GNU Lesser General Public License
-// along with rml.  If not, see <https://www.gnu.org/licenses/>.
-
 /*!
-Implements various operations common to Machine Learning problems.
+Provides functionality for tokenizing and vectorizing data retrieved by the `csv` module.
 */
 
-pub mod distance;
-
-pub mod norm;
+pub mod frequency;
+pub mod hashing;
+pub mod tokenize;

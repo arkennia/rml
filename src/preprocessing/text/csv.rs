@@ -15,17 +15,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Enables loading of data from CSV files.
-//!
-//! Supports data with and without labels.
+/*!
+Enables loading of data from CSV files.
+
+Supports data with and without labels. See the functions within this module for examples.
+*/
 use csv::StringRecord;
 use std::error::Error;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-/// A tuple type containing (features, labels).
-///
-/// T is the type of feature, U is the type of the label.
+/**
+A tuple type containing (features, labels).
+
+T is the type of feature, U is the type of the label.
+*/
 pub type CSVOutput<T, U> = (Vec<Vec<T>>, Vec<U>);
 
 /// Enum for where the class label is in the data.
@@ -37,17 +41,19 @@ pub enum ClassPosition {
     Last,
 }
 
-/// Parses a csv that has labels either in the first or last position.
-///
-/// T is the type of feature, U is the type of the label.
-///
-/// # Example
-/// ```rust
-/// use rml::preprocessing::text::csv;
-/// let str_data: csv::CSVOutput<String, i32> =
-///            csv::parse_csv_with_labels("./data/test_data/str_test.csv", false, csv::ClassPosition::Last)
-///                .expect("Error parsing csv.");
-///```
+/**
+Parses a csv that has labels either in the first or last position.
+
+T is the type of feature, U is the type of the label.
+
+# Example
+```rust
+use rml::preprocessing::text::csv;
+let str_data: csv::CSVOutput<String, i32> =
+           csv::parse_csv_with_labels("./data/test_data/str_test.csv", false, csv::ClassPosition::Last)
+               .expect("Error parsing csv.");
+```
+*/
 pub fn parse_csv_with_labels<T, U>(
     path: &str,
     has_headers: bool,

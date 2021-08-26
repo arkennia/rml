@@ -18,14 +18,14 @@
 //! Module that allows for loading and parsing of data.
 
 pub mod csv;
+pub mod vectorizers;
 
-/// Consumes the given vector `v` of type Vec<Vec<T>> and flattens it to Vec<T>.
-///
-/// Can be used to flatten the data pulled from the `csv` module. An example usage would be
-/// where each line is a string. This will create a vector of strings instead of Vec<Vec<String>>.
-/// # Example
-// / ```rust
-// / ```
+/**
+Consumes the given vector `v` of type Vec<Vec<T>> and flattens it to Vec<T>.
+
+Can be used to flatten the data pulled from the `csv` module. An example usage would be
+where each line is a string. This will create a vector of strings instead of Vec<Vec<String>>.
+*/
 pub fn flatten<T>(v: Vec<Vec<T>>) -> Vec<T> {
     v.into_iter().flatten().collect()
 }

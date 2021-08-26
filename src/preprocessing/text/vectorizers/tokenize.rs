@@ -11,14 +11,3 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-
-// You should have received a copy of the GNU Lesser General Public License
-// along with rml.  If not, see <https://www.gnu.org/licenses/>.
-
-/*!
-Implements various operations common to Machine Learning problems.
-*/
-
-pub mod distance;
-
-pub mod norm;

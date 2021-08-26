@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Implementation for K-Nearest Neighbors.
-
 /*!
+Implementation for K-Nearest Neighbors.
+
 Allows for predicting data based on a KNN search.
 A full, working example is contained in the `examples/knn` directory.
 
@@ -69,9 +69,11 @@ use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-/// KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
-/// It is *highly recommended* to not change values inside of this struct manually. Always
-/// create a new one using ::new.
+/**
+KNN struct handles the computation and data for the K-Nearest Neighbors algorithm.
+It is *highly recommended* to not change values inside of this struct manually. Always
+create a new one using ::new.
+*/
 #[derive(Debug, Clone)]
 pub struct KNN {
     /// K-Nearest to analyze
@@ -127,21 +129,25 @@ impl KNN {
         knn
     }
 
-    /// Gets the number of unique labels.
-    /// This function is called when ::new is called. You can access the value using
-    /// the value contained in the KNN struct.
+    /**
+    Gets the number of unique labels.
+    This function is called when ::new is called. You can access the value using
+    the value contained in the KNN struct.
+    */
     pub fn get_num_labels(y: &[i32]) -> usize {
         let set: HashSet<i32> = y.iter().cloned().collect::<HashSet<_>>();
         set.len()
     }
 
-    /// Helper function to convert data that has integer based labels to floating point labels.
-    /// # Example
-    /// ```rust
-    /// use rml::knn::KNN;
-    /// let q: Vec<Vec<i32>> = vec![vec![2, 2]];
-    /// KNN::convert_to_f64(&q); // This will return the vector <2.0, 2.0>.
-    ///
+    /**
+    Helper function to convert data that has integer based labels to floating point labels.
+    # Example
+    ```rust
+    use rml::knn::KNN;
+    let q: Vec<Vec<i32>> = vec![vec![2, 2]];
+    KNN::convert_to_f64(&q); // This will return the vector <2.0, 2.0>.
+
+    */
     pub fn convert_to_f64(xi32: &[Vec<i32>]) -> Vec<Vec<f64>> {
         xi32.iter()
             .map(|x| x.iter().map(|val| *val as f64).collect())
@@ -162,8 +168,10 @@ impl KNN {
         (&self.x, &self.y)
     }
 
-    /// Calculate the distance from `new_point` to all other points in the set.
-    /// Note: new_point must be the same dimensions as the data passed into ::new.
+    /**
+    Calculate the distance from `new_point` to all other points in the set.
+    Note: new_point must be the same dimensions as the data passed into ::new.
+    */
     pub fn calculate_distances(&self, new_point: &[f64]) -> Vec<Point> {
         let distance_fn = match self.distance {
             Some(distance::Distance::Manhattan) => distance::manhattan_distance,

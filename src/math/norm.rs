@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Contains functions for normalizing vectors.
+/*!
+Contains functions for normalizing vectors.
+*/
 
 /// Describes the types of normalizations that are possible.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,39 +26,45 @@ pub enum Norm {
     L2,
 }
 
-/// Produces an L2 norm from the given data.
-/// # Example
-/// ```rust
-/// use rml::math::norm::l2_norm;
-/// let p: Vec<f64> = vec![2.0, 2.0, 2.0];
-/// println!("{}", l2_norm(&p));
-/// ```
+/**
+Produces an L2 norm from the given data.
+# Example
+```rust
+use rml::math::norm::l2_norm;
+let p: Vec<f64> = vec![2.0, 2.0, 2.0];
+println!("{}", l2_norm(&p));
+```
+*/
 pub fn l2_norm(p: &[f64]) -> f64 {
     let norm: f64 = p.iter().map(|x| x.powi(2)).sum();
 
     norm.sqrt()
 }
 
-/// Produces an L1 norm from the given data.
-/// # Example
-/// ```rust
-/// use rml::math::norm::l1_norm;
-/// let p: Vec<f64> = vec![2.0, 2.0, 2.0];
-/// println!("{}", l1_norm(&p));
-/// ```
+/**
+Produces an L1 norm from the given data.
+# Example
+```rust
+use rml::math::norm::l1_norm;
+let p: Vec<f64> = vec![2.0, 2.0, 2.0];
+println!("{}", l1_norm(&p));
+```
+*/
 pub fn l1_norm(p: &[f64]) -> f64 {
     let norm: f64 = p.iter().map(|x| x.abs()).sum();
 
     norm
 }
 
-/// Produces a normalizard from the given data.
-/// # Example
-/// ```rust
-/// use rml::math::norm;
-/// let mut p: Vec<f64> = vec![2.0, 2.0, 2.0];
-/// println!("{:?}", norm::normalize_vector(&mut p, &norm::Norm::L2));
-/// ```
+/**
+Produces a normalizard from the given data.
+# Example
+```rust
+use rml::math::norm;
+let mut p: Vec<f64> = vec![2.0, 2.0, 2.0];
+println!("{:?}", norm::normalize_vector(&mut p, &norm::Norm::L2));
+```
+*/
 pub fn normalize_vector(p: &mut [f64], norm_type: &Norm) {
     let norm = match norm_type {
         Norm::L1 => l1_norm(p),

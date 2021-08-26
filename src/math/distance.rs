@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Computes distances needed for KNN.
+/*!
+Computes distances needed for KNN.
 
-//! Supports both euclidean and manhattan distances.
+Supports both euclidean and manhattan distances.
+*/
 
 /// An enum which describes the two available types of distance calculations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,14 +28,16 @@ pub enum Distance {
     Manhattan,
 }
 
-/// Calculate the euclidean distance between two points.
-/// # Example
-/// ```rust
-/// use rml::math::distance::euclidean_distance;
-/// let x: Vec<f64> = vec![5.0, 6.0];
-/// let y: Vec<f64> = vec![-7.0, 11.0];
-/// println!("{}", euclidean_distance(&x, &y))
-/// ```
+/**
+Calculate the euclidean distance between two points.
+# Example
+```rust
+use rml::math::distance::euclidean_distance;
+let x: Vec<f64> = vec![5.0, 6.0];
+let y: Vec<f64> = vec![-7.0, 11.0];
+println!("{}", euclidean_distance(&x, &y))
+```
+*/
 pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
     let distance: f64 = q.iter().zip(p).map(|(&q, &p)| (f64::powi(q - p, 2))).sum();
 
@@ -44,14 +48,16 @@ pub fn euclidean_distance(p: &[f64], q: &[f64]) -> f64 {
     }
 }
 
-/// Calculate the Manhattan distance between two points.
-/// # Example
-/// ```rust
-/// use rml::math::distance::manhattan_distance;
-/// let x: Vec<f64> = vec![5.0, 6.0];
-/// let y: Vec<f64> = vec![-7.0, 11.0];
-/// println!("{}", manhattan_distance(&x, &y))
-/// ```
+/**
+Calculate the Manhattan distance between two points.
+# Example
+```rust
+use rml::math::distance::manhattan_distance;
+let x: Vec<f64> = vec![5.0, 6.0];
+let y: Vec<f64> = vec![-7.0, 11.0];
+println!("{}", manhattan_distance(&x, &y))
+```
+*/
 pub fn manhattan_distance(p: &[f64], q: &[f64]) -> f64 {
     let distance: f64 = p.iter().zip(q).map(|(&p, &q)| (p - q).abs()).sum();
 
