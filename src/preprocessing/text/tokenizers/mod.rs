@@ -11,14 +11,15 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-use std::error::Error;
 
 pub mod simple_tokenizer;
 
+pub use simple_tokenizer::SimpleTokenizer;
+
 pub trait Tokenize {
-    fn create_tokens(&mut self, data: &Vec<String>);
-    fn encode(&self, input: &String) -> Option<Vec<i32>>;
-    fn decode(&self, input: &[i32]) -> Result<String, Box<dyn Error>>;
+    fn create_tokens(&mut self, data: &[String]);
+    fn encode(&self, input: &str) -> Option<Vec<i32>>;
+    fn decode(&self, input: &[i32]) -> Option<String>;
     fn set_max_tokens(&mut self, max_tokens: i32);
     fn get_tokens(&self) -> Vec<String>;
 }

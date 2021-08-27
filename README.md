@@ -24,7 +24,10 @@ rml = "0.1.0"
 The program provided here is licensed under the Lesser GPL 3.0 License. A copy of this license is contained within the github repository.
 
 
-# Citation
+# Citations
 The data used is downloaded from [The UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/Optical+Recognition+of+Handwritten+Digits).
 
 Citation: Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://archive.ics.uci.edu/ml]. Irvine, CA: University of California, School of Information and Computer Science.
+
+The IMDB dataset is from:
+Andrew L. Maas, Raymond E. Daly, Peter T. Pham, Dan Huang, Andrew Y. Ng, and Christopher Potts. (2011). Learning Word Vectors for Sentiment Analysis. The 49th Annual Meeting of the Association for Computational Linguistics (ACL 2011).

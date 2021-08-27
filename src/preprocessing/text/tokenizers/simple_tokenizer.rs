@@ -12,17 +12,48 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
+/*!
+Simple Tokenizer that implements the `Tokenize` trait. This tokenizer first removes all
+punctuation, and then splits the rest into word chunks.
+
+# Example
+```rust
+use rml::preprocessing::text::tokenizers;
+use rml::preprocessing::text::tokenizers::Tokenize;
+let mut st = tokenizers::SimpleTokenizer::new(100);
+st.create_tokens(&vec![
+    String::from("Hello, my name is bob!"),
+    String::from("Beep boop I'm a bot"),
+    String::from("Beep boop I'm a bob!"),
+]);
+let mut t = st.get_tokens();
+t.sort_unstable();
+let mut test_data = vec![
+    "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
+];
+test_data.sort_unstable();
+assert_eq!(t, test_data);
+```
+*/
+
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
 use std::collections::HashSet;
 
+// The unknown token string.
 const UNKNOWN_STR: &str = "UNK";
+// The index of the unknown token.
 const UNKNOWN_IDX: usize = 0;
 
+/**
+Contains the data and options for the tokenizer.
+*/
 #[derive(Debug, Clone)]
 pub struct SimpleTokenizer {
+    /// Total number of tokens to create.
     pub max_tokens: i32,
+    /// The tokens we generate.
     tokens: Vec<String>,
 }
 
@@ -45,9 +76,12 @@ impl SimpleTokenizer {
 }
 
 impl tokenizers::Tokenize for SimpleTokenizer {
-    fn create_tokens(&mut self, data: &Vec<String>) {
-        let mut tokens: Vec<String> = Vec::new();
-        tokens.push(UNKNOWN_STR.to_string());
+    /**
+        Create the tokens to use for tokenization of a text.
+        It stores the created tokens internally, and can be retrieved wit the `get_tokens` function.
+    */
+    fn create_tokens(&mut self, data: &[String]) {
+        let mut tokens: Vec<String> = vec![UNKNOWN_STR.to_string()];
 
         let mut hashset: HashSet<String> = HashSet::new();
         let mut lower_buffer = String::new();
@@ -71,23 +105,21 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         self.tokens = tokens;
     }
 
-    fn encode(&self, input: &String) -> Option<Vec<i32>> {
+    /**
+    Turn the given string into a vector of integers matching the corrrect feature,
+    or place a 0 for unknown tokens.
+
+    # Note
+    If the `create_tokens` function was not called before this one, it will return none.
+    */
+    fn encode(&self, input: &str) -> Option<Vec<i32>> {
         if !self.tokens.is_empty() {
             let mut input = input.to_owned();
+            let mut output: Vec<i32> = Vec::default();
+
             input.make_ascii_lowercase();
             let input = regexes::RM_PUNCT.replace_all(&input, "");
-            // Some(
-            //     regexes::FIND_WHITESPACE
-            //         .split(&input)
-            //         .map(|x| {
-            //             println!("{:?}", x.to_string());
-            //             self.tokens
-            //                 .binary_search(&x.to_string())
-            //                 .expect("Error processing key") as i32
-            //         })
-            //         .collect::<Vec<i32>>(),
-            // )
-            let mut output: Vec<i32> = Vec::default();
+
             println!("{:?}", self.tokens);
             for x in regexes::FIND_WHITESPACE.split(&input) {
                 println!("{:?}", x.to_string());
@@ -103,10 +135,30 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         }
     }
 
-    fn decode(&self, _input: &[i32]) -> Result<String, Box<dyn std::error::Error>> {
-        todo!()
+    /**
+    Turn the given integer slice into a string matching the corrrect features,
+    or place an `UNK` token for unknowns.
+
+    # Note
+    If the `create_tokens` function was not called before this one, it will return none.
+    */
+    fn decode(&self, input: &[i32]) -> Option<String> {
+        if !self.tokens.is_empty() {
+            let mut output = String::new();
+            for word in input {
+                output.push_str(&self.tokens[*word as usize]);
+                output.push(' ');
+            }
+            Some(output.trim().to_string())
+        } else {
+            None
+        }
     }
 
+    /**
+    Change the number of tokens to create. For this to take effect, you must call
+    `create_tokens` again.
+    */
     fn set_max_tokens(&mut self, max_tokens: i32) {
         if max_tokens > 0 {
             self.max_tokens = max_tokens;
@@ -152,5 +204,23 @@ mod tests {
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
         assert_eq!(test_data, Some(vec![6, 7, 0]));
+    }
+
+    #[test]
+    fn decode_test() {
+        let mut st = SimpleTokenizer::new(100);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+        st.tokens.sort_unstable();
+        let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
+        let test_data = st.encode(&test_data[0]);
+
+        assert_eq!(
+            st.decode(&test_data.unwrap()).unwrap(),
+            String::from("hello im UNK")
+        )
     }
 }

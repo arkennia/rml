@@ -45,7 +45,7 @@ impl Default for FrequencyVectorizer {
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::simple_tokenizer::SimpleTokenizer::new(10000)),
+            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000)),
         }
     }
 }
@@ -58,9 +58,9 @@ impl FrequencyVectorizer {
         }
     }
 
-    pub fn gen_tokens(&mut self, data: &Vec<String>) {
+    pub fn gen_tokens(&mut self, data: &[String]) {
         self.tokenizer.set_max_tokens(self.max_features as i32);
-        self.tokenizer.create_tokens(&data);
+        self.tokenizer.create_tokens(data);
     }
 
     pub fn vectorize<T: From<i32>>(
@@ -76,7 +76,7 @@ impl FrequencyVectorizer {
 
     fn vectorize_line<T: From<i32>>(
         tokenizer: &(impl tokenizers::Tokenize + ?Sized),
-        line: &String,
+        line: &str,
     ) -> Vec<T> {
         let i32_vec: Vec<i32> = tokenizer
             .encode(line)
