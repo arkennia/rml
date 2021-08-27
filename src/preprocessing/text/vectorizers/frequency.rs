@@ -26,7 +26,7 @@ pub enum Ngrams {
 
 pub struct FrequencyVectorizer {
     pub max_features: usize,
-    pub features: Vec<String>,
+    pub binary: bool,
     pub user_lowercase: bool,
     pub use_tfidf: bool,
     pub norm: Option<norm::Norm>,
@@ -39,47 +39,33 @@ impl Default for FrequencyVectorizer {
     fn default() -> Self {
         Self {
             max_features: 10000,
-            features: Vec::new(),
+            binary: false,
             user_lowercase: true,
             use_tfidf: false,
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::simple_tokenizer::SimpleTokenizer::default()),
+            tokenizer: Box::new(tokenizers::simple_tokenizer::SimpleTokenizer::new(10000)),
         }
     }
 }
 
 impl FrequencyVectorizer {
-    pub fn new(
-        max_features: usize,
-        features: Vec<String>,
-        user_lowercase: bool,
-        use_tfidf: bool,
-        norm: Option<norm::Norm>,
-        stop_words: Option<Vec<String>>,
-        ngrams: Ngrams,
-        tokenizer: impl tokenizers::Tokenize + 'static,
-    ) -> Self {
+    pub fn new(max_features: usize) -> Self {
         Self {
             max_features,
-            features,
-            user_lowercase,
-            use_tfidf,
-            norm,
-            stop_words,
-            ngrams,
-            tokenizer: Box::new(tokenizer),
+            ..Self::default()
         }
     }
 
-    pub fn gen_tokens(&mut self) {
-        self.features = self.tokenizer.create_tokens();
+    pub fn gen_tokens(&mut self, data: &Vec<String>) {
+        self.tokenizer.set_max_tokens(self.max_features as i32);
+        self.tokenizer.create_tokens(&data);
     }
 
     pub fn vectorize<T: From<i32>>(
         &self,
-        input_data: &[Vec<String>],
+        input_data: &[String],
     ) -> Result<Vec<Vec<T>>, Box<dyn Error>> {
         let output: Vec<Vec<T>> = input_data
             .iter()
@@ -90,11 +76,39 @@ impl FrequencyVectorizer {
 
     fn vectorize_line<T: From<i32>>(
         tokenizer: &(impl tokenizers::Tokenize + ?Sized),
-        line: &[String],
+        line: &String,
     ) -> Vec<T> {
         let i32_vec: Vec<i32> = tokenizer
             .encode(line)
             .expect("Error processing vector line.");
+        println! {"{:?}", i32_vec};
         i32_vec.iter().map(|x| T::from(*x)).collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FrequencyVectorizer;
+
+    #[test]
+    fn create_tokens_test() {
+        let test_data = vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ];
+        let mut vectorizer = FrequencyVectorizer::new(15);
+        vectorizer.gen_tokens(&test_data);
+        let test = vectorizer.vectorize::<i32>(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+
+        println!("{:?}", test);
+        assert_eq!(
+            test.unwrap(),
+            vec![[6, 9, 10, 8, 3], [2, 4, 7, 1, 5], [2, 4, 7, 1, 3]]
+        );
     }
 }

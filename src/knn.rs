@@ -83,11 +83,11 @@ pub struct KNN {
     /// Class labels for each feature.
     pub y: Vec<i32>,
     /// Number of labels.
-    pub num_labels: usize,
+    num_labels: usize,
     /// Type of distance to use.
-    pub distance: Option<distance::Distance>,
+    distance: Option<distance::Distance>,
     /// The type of normalization, or None.
-    pub normalize: Option<norm::Norm>,
+    normalize: Option<norm::Norm>,
 }
 
 /// A data point.

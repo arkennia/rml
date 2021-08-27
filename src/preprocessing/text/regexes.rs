@@ -11,14 +11,17 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-use std::error::Error;
 
-pub mod simple_tokenizer;
+/*!
+Contains lazy static versions of the regexes used so they don't need to be recompiled
+during every function call.
+*/
 
-pub trait Tokenize {
-    fn create_tokens(&mut self, data: &Vec<String>);
-    fn encode(&self, input: &String) -> Option<Vec<i32>>;
-    fn decode(&self, input: &[i32]) -> Result<String, Box<dyn Error>>;
-    fn set_max_tokens(&mut self, max_tokens: i32);
-    fn get_tokens(&self) -> Vec<String>;
+use regex::Regex;
+
+lazy_static! {
+    /// Finds all punctuation and symbols within a string.
+    pub static ref RM_PUNCT: Regex = Regex::new("[,@#!\\?\"']").unwrap();
+    /// Finds everything not a character or number. Used to split on whitespace.
+    pub static ref FIND_WHITESPACE: Regex = Regex::new("[^A-Za-z0-9]").unwrap();
 }

@@ -18,6 +18,7 @@
 //! Module that allows for loading and parsing of data.
 
 pub mod csv;
+pub mod regexes;
 pub mod tokenizers;
 pub mod vectorizers;
 

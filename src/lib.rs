@@ -26,6 +26,9 @@ See the provided examples directory for how to use the corresponding algorithms 
 
 !*/
 
+#[macro_use]
+extern crate lazy_static;
+
 pub mod knn;
 pub mod math;
 

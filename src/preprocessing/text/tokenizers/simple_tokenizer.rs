@@ -12,20 +12,32 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
+use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
-use regex::Regex;
 
-#[derive(Debug, Clone, Default)]
+use std::collections::HashSet;
+
+const UNKNOWN_STR: &str = "UNK";
+const UNKNOWN_IDX: usize = 0;
+
+#[derive(Debug, Clone)]
 pub struct SimpleTokenizer {
-    pub data: Vec<String>,
     pub max_tokens: i32,
     tokens: Vec<String>,
 }
 
-impl SimpleTokenizer {
-    pub fn new(data: Vec<String>, max_tokens: i32) -> Self {
+impl Default for SimpleTokenizer {
+    fn default() -> Self {
         Self {
-            data,
+            max_tokens: 10,
+            tokens: Default::default(),
+        }
+    }
+}
+
+impl SimpleTokenizer {
+    pub fn new(max_tokens: i32) -> Self {
+        Self {
             max_tokens,
             tokens: Vec::new(),
         }
@@ -33,28 +45,76 @@ impl SimpleTokenizer {
 }
 
 impl tokenizers::Tokenize for SimpleTokenizer {
-    fn create_tokens(&self) -> Vec<String> {
-        let rm_punct = Regex::new("[,@#!\\?\"']").unwrap();
-        let split_on_whitespace = Regex::new("[^A-Za-z0-9]").unwrap();
-        let mut output: Vec<String> = Vec::new();
+    fn create_tokens(&mut self, data: &Vec<String>) {
+        let mut tokens: Vec<String> = Vec::new();
+        tokens.push(UNKNOWN_STR.to_string());
+
+        let mut hashset: HashSet<String> = HashSet::new();
         let mut lower_buffer = String::new();
-        for entry in &self.data {
+        for entry in data {
             lower_buffer.push_str(entry);
             lower_buffer.make_ascii_lowercase();
-            let entry = rm_punct.replace_all(&lower_buffer, ""); // FIXME: Improve this to avoid throwing this out repeatedly.
-            output.extend(split_on_whitespace.split(&entry).map(String::from));
+            let entry = regexes::RM_PUNCT.replace_all(&lower_buffer, ""); // FIXME: Improve this to avoid throwing this out repeatedly.
+
+            for x in regexes::FIND_WHITESPACE.split(&entry) {
+                hashset.insert(x.to_string());
+            }
+
             lower_buffer.clear();
         }
-
-        output
+        let mut tmp = hashset
+            .into_iter()
+            .take(self.max_tokens as usize)
+            .collect::<Vec<String>>();
+        tmp.sort_unstable();
+        tokens.extend(tmp);
+        self.tokens = tokens;
     }
 
-    fn encode(&self, _input: &[String]) -> Result<Vec<i32>, Box<dyn std::error::Error>> {
+    fn encode(&self, input: &String) -> Option<Vec<i32>> {
+        if !self.tokens.is_empty() {
+            let mut input = input.to_owned();
+            input.make_ascii_lowercase();
+            let input = regexes::RM_PUNCT.replace_all(&input, "");
+            // Some(
+            //     regexes::FIND_WHITESPACE
+            //         .split(&input)
+            //         .map(|x| {
+            //             println!("{:?}", x.to_string());
+            //             self.tokens
+            //                 .binary_search(&x.to_string())
+            //                 .expect("Error processing key") as i32
+            //         })
+            //         .collect::<Vec<i32>>(),
+            // )
+            let mut output: Vec<i32> = Vec::default();
+            println!("{:?}", self.tokens);
+            for x in regexes::FIND_WHITESPACE.split(&input) {
+                println!("{:?}", x.to_string());
+                output.push(
+                    self.tokens
+                        .binary_search(&x.to_string())
+                        .unwrap_or(UNKNOWN_IDX) as i32,
+                );
+            }
+            Some(output)
+        } else {
+            None
+        }
+    }
+
+    fn decode(&self, _input: &[i32]) -> Result<String, Box<dyn std::error::Error>> {
         todo!()
     }
 
-    fn decode(&self, _input: &[i32]) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        todo!()
+    fn set_max_tokens(&mut self, max_tokens: i32) {
+        if max_tokens > 0 {
+            self.max_tokens = max_tokens;
+        }
+    }
+
+    fn get_tokens(&self) -> Vec<String> {
+        self.tokens.clone()
     }
 }
 
@@ -66,15 +126,31 @@ mod tests {
 
     #[test]
     fn create_tokens_test() {
-        let st = SimpleTokenizer::new(
-            vec![
-                String::from("Hello, my name is bob!"),
-                String::from("Beep boop I'm a bot"),
-            ],
-            100,
-        );
-        let tokens = st.create_tokens();
-        println!("{:?}", tokens);
-        assert!(false);
+        let mut st = SimpleTokenizer::new(100);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+        st.tokens.sort_unstable();
+        let mut test_data = vec![
+            "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
+        ];
+        test_data.sort_unstable();
+        assert_eq!(st.tokens, test_data);
+    }
+
+    #[test]
+    fn encode_test() {
+        let mut st = SimpleTokenizer::new(100);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+        st.tokens.sort_unstable();
+        let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
+        let test_data = st.encode(&test_data[0]);
+        assert_eq!(test_data, Some(vec![6, 7, 0]));
     }
 }
