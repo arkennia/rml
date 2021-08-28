@@ -27,7 +27,7 @@ pub enum Ngrams {
 pub struct FrequencyVectorizer {
     pub max_features: usize,
     pub binary: bool,
-    pub user_lowercase: bool,
+    pub use_lowercase: bool,
     pub use_tfidf: bool,
     pub norm: Option<norm::Norm>,
     pub stop_words: Option<Vec<String>>,
@@ -40,7 +40,7 @@ impl Default for FrequencyVectorizer {
         Self {
             max_features: 10000,
             binary: false,
-            user_lowercase: true,
+            use_lowercase: true,
             use_tfidf: false,
             norm: None,
             stop_words: None,
