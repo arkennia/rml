@@ -32,6 +32,10 @@ preprocessing = []
 name = "csvparsing"
 harness = false
 
+[[bench]]
+name = "simplefrequency"
+harness = false
+
 [[example]]
 name = "knn"
 

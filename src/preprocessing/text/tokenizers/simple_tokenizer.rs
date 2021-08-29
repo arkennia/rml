@@ -52,7 +52,7 @@ Contains the data and options for the tokenizer.
 #[derive(Debug, Clone)]
 pub struct SimpleTokenizer {
     /// Total number of tokens to create.
-    pub max_tokens: i32,
+    pub max_tokens: usize,
     /// The tokens we generate.
     tokens: Vec<String>,
 }
@@ -67,7 +67,7 @@ impl Default for SimpleTokenizer {
 }
 
 impl SimpleTokenizer {
-    pub fn new(max_tokens: i32) -> Self {
+    pub fn new(max_tokens: usize) -> Self {
         Self {
             max_tokens,
             tokens: Vec::new(),
@@ -80,21 +80,17 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         Create the tokens to use for tokenization of a text.
         It stores the created tokens internally, and can be retrieved wit the `get_tokens` function.
     */
+    // TODO: Implement feature mapping to only keep the x most popular. (hashmap)
+    // TODO: Add more regexes for handling more punctuation (IE not at the beginning of a sentence with no proper spacing)
+    // TODO: End of sentenence punctuation.
     fn create_tokens(&mut self, data: &[String]) {
         let mut tokens: Vec<String> = vec![UNKNOWN_STR.to_string()];
 
         let mut hashset: HashSet<String> = HashSet::new();
-        let mut lower_buffer = String::new();
         for entry in data {
-            lower_buffer.push_str(entry);
-            lower_buffer.make_ascii_lowercase();
-            let entry = regexes::RM_PUNCT.replace_all(&lower_buffer, ""); // FIXME: Improve this to avoid throwing this out repeatedly.
-
-            for x in regexes::FIND_WHITESPACE.split(&entry) {
+            for x in regexes::FIND_WHITESPACE.split(&self.sanitize_line(entry.to_string()).trim()) {
                 hashset.insert(x.to_string());
             }
-
-            lower_buffer.clear();
         }
         let mut tmp = hashset
             .into_iter()
@@ -114,15 +110,9 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     */
     fn encode(&self, input: &str) -> Option<Vec<i32>> {
         if !self.tokens.is_empty() {
-            let mut input = input.to_owned();
+            let input = input.to_owned();
             let mut output: Vec<i32> = Vec::default();
-
-            input.make_ascii_lowercase();
-            let input = regexes::RM_PUNCT.replace_all(&input, "");
-
-            println!("{:?}", self.tokens);
-            for x in regexes::FIND_WHITESPACE.split(&input) {
-                println!("{:?}", x.to_string());
+            for x in regexes::FIND_WHITESPACE.split(&self.sanitize_line(input.trim().to_string())) {
                 output.push(
                     self.tokens
                         .binary_search(&x.to_string())
@@ -159,7 +149,7 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     Change the number of tokens to create. For this to take effect, you must call
     `create_tokens` again.
     */
-    fn set_max_tokens(&mut self, max_tokens: i32) {
+    fn set_max_tokens(&mut self, max_tokens: usize) {
         if max_tokens > 0 {
             self.max_tokens = max_tokens;
         }
@@ -167,6 +157,16 @@ impl tokenizers::Tokenize for SimpleTokenizer {
 
     fn get_tokens(&self) -> Vec<String> {
         self.tokens.clone()
+    }
+
+    fn sanitize_line(&self, line: String) -> String {
+        let mut line: String = line;
+        line.make_ascii_lowercase();
+        let buffer = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
+        let buffer = regexes::PUNCT_AT_END.replace_all(&buffer, "");
+        regexes::PUNCT_NOT_AT_END
+            .replace_all(&buffer, " ")
+            .into_owned()
     }
 }
 

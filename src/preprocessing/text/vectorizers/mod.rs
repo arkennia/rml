@@ -18,3 +18,6 @@ Provides functionality for tokenizing and vectorizing data retrieved by the `csv
 
 pub mod frequency;
 pub mod hashing;
+
+pub use frequency::*;
+pub use hashing::*;

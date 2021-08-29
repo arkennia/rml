@@ -21,6 +21,8 @@ pub mod csv;
 pub mod regexes;
 pub mod tokenizers;
 pub mod vectorizers;
+pub use tokenizers::*;
+pub use vectorizers::*;
 
 /**
 Consumes the given vector `v` of type Vec<Vec<T>> and flattens it to Vec<T>.

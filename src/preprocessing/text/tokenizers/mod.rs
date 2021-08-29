@@ -12,6 +12,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
+/*!
+Contains the tokenizers that are used by the vectorizers.
+
+Defines the `Tokenize` trait for creating Tokenizers.
+*/
+
 pub mod simple_tokenizer;
 
 pub use simple_tokenizer::SimpleTokenizer;
@@ -20,6 +26,7 @@ pub trait Tokenize {
     fn create_tokens(&mut self, data: &[String]);
     fn encode(&self, input: &str) -> Option<Vec<i32>>;
     fn decode(&self, input: &[i32]) -> Option<String>;
-    fn set_max_tokens(&mut self, max_tokens: i32);
+    fn sanitize_line(&self, line: String) -> String;
+    fn set_max_tokens(&mut self, max_tokens: usize);
     fn get_tokens(&self) -> Vec<String>;
 }
