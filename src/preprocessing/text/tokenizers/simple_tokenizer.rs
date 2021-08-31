@@ -30,15 +30,12 @@ st.create_tokens(&vec![
 ]);
 let mut t = st.get_tokens();
 t.sort_unstable();
-let mut test_data = vec![
-    "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
-];
+let mut test_data = vec!["UNK", "a", "beep", "bob", "boop", "bot", "hello", "i", "is", "m", "my", "name"];
 test_data.sort_unstable();
 assert_eq!(t, test_data);
 ```
 */
 
-use crate::preprocessing::text;
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
@@ -80,7 +77,7 @@ impl SimpleTokenizer {
         Self {
             max_tokens,
             use_lowercase,
-            stop_words: stop_words,
+            stop_words,
             ..Self::default()
         }
     }
@@ -95,6 +92,11 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         let mut hashmap: HashMap<String, (usize, u32)> = HashMap::new();
         for entry in data {
             for x in self.sanitize_line(entry.trim().to_string()).split(' ') {
+                if let Some(stop_words) = &self.stop_words {
+                    if stop_words.contains(&x.to_string()) {
+                        continue;
+                    }
+                }
                 let tmp = hashmap.insert(x.to_string(), (hashmap.len() + 1, 1));
                 if let Some(y) = tmp {
                     hashmap.insert(x.to_string(), (y.0, y.1 + 1));
@@ -139,6 +141,11 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             let input = input.to_owned();
             let mut output: Vec<i32> = Vec::default();
             for x in self.sanitize_line(input.trim().to_string()).split(' ') {
+                if let Some(stop_words) = &self.stop_words {
+                    if stop_words.contains(&x.to_string()) {
+                        continue;
+                    }
+                }
                 output.push(self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0 as i32);
             }
             Some(output)
@@ -182,17 +189,12 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     /**
     Remove all punctuation.
     */
-    // TODO: Implement stop words when remove_matches is no longer in nightly.
     fn sanitize_line(&self, line: String) -> String {
         let mut line: String = line;
 
         line.make_ascii_lowercase();
 
-        if self.stop_words.is_some() {
-            text::replace_substr(&mut line, self.stop_words.as_ref().unwrap());
-        }
-
-        let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
+        let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, " ");
         let line = regexes::PUNCT_AT_END.replace_all(&line, "");
         let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
         let line = regexes::DOUBLE_WHITESPACE.replace_all(&line, " ");
@@ -236,13 +238,14 @@ impl tokenizers::Tokenize for SimpleTokenizer {
 
 #[cfg(test)]
 mod tests {
+    use crate::preprocessing::text;
     use crate::preprocessing::text::tokenizers::Tokenize;
 
     use super::*;
 
     #[test]
     fn create_tokens_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
+        let mut st = SimpleTokenizer::new(100, true, Some(text::load_stop_words("english")));
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
@@ -250,9 +253,7 @@ mod tests {
         ]);
         let mut tokens = st.get_tokens();
         tokens.sort_unstable();
-        let mut test_data = vec![
-            "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
-        ];
+        let mut test_data = vec!["UNK", "beep", "bob", "boop", "bot", "hello", "name"];
         test_data.sort_unstable();
         println!("{:?}", st.tokens);
         assert_eq!(tokens, test_data);
@@ -271,7 +272,7 @@ mod tests {
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
         println!("{:?}", tokens);
-        assert_eq!(test_data, Some(vec![1, 8, 0]));
+        assert_eq!(test_data, Some(vec![1, 8, 9, 0]));
     }
 
     #[test]
@@ -289,7 +290,7 @@ mod tests {
 
         assert_eq!(
             st.decode(&test_data.unwrap()).unwrap(),
-            String::from("hello im UNK")
+            String::from("hello i m UNK")
         )
     }
 }

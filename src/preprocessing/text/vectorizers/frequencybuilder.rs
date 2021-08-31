@@ -105,7 +105,7 @@ mod tests {
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ];
-        let builder = FrequencyVectorizerBuilder::new(10, true)
+        let builder = FrequencyVectorizerBuilder::new(12, true)
             .with_ngram_type(Ngrams::Unigram)
             .with_tfidf(false)
             .with_tokenizer(Box::new(tokenizers::SimpleTokenizer::new(10, true, None)));
@@ -120,7 +120,11 @@ mod tests {
         println!("{:?}", test);
         assert_eq!(
             test.unwrap(),
-            vec![[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [6, 7, 8, 9, 5]]
+            vec![
+                vec![1, 2, 3, 4, 5],
+                vec![6, 7, 8, 9, 10, 11],
+                vec![6, 7, 8, 9, 10, 5]
+            ]
         );
     }
 }

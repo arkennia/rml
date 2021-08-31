@@ -19,11 +19,13 @@
 
 pub mod csv;
 pub mod regexes;
+pub mod stop_words;
 pub mod tokenizers;
 pub mod vectorizers;
+
+pub use stop_words::*;
 pub use tokenizers::*;
 pub use vectorizers::*;
-
 /**
 Consumes the given vector `v` of type Vec<Vec<T>> and flattens it to Vec<T>.
 
@@ -32,15 +34,6 @@ where each line is a string. This will create a vector of strings instead of Vec
 */
 pub fn flatten<T>(v: Vec<Vec<T>>) -> Vec<T> {
     v.into_iter().flatten().collect()
-}
-
-fn replace_substr(line: &mut String, substrings: &Vec<String>) {
-    for word in substrings {
-        let start = line.find(word);
-        if start.is_some() {
-            line.replace_range(start.unwrap()..word.len() - 1, "");
-        }
-    }
 }
 
 #[cfg(test)]
