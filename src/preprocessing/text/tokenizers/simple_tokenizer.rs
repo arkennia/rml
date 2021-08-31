@@ -21,6 +21,7 @@ regex to increase accuracy of tokenization, at the detriment to throughput.
 ```rust
 use rml::preprocessing::text::tokenizers;
 use rml::preprocessing::text::tokenizers::Tokenize;
+
 let mut st = tokenizers::SimpleTokenizer::new(100, true, None);
 st.create_tokens(&vec![
     String::from("Hello, my name is bob!"),
@@ -30,13 +31,14 @@ st.create_tokens(&vec![
 let mut t = st.get_tokens();
 t.sort_unstable();
 let mut test_data = vec![
-    "UNK", "beep", "bob", "a", "my", "i'm", "boop", "hello", "name", "is", "bot",
+    "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
 ];
 test_data.sort_unstable();
 assert_eq!(t, test_data);
 ```
 */
 
+use crate::preprocessing::text;
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
@@ -186,6 +188,10 @@ impl tokenizers::Tokenize for SimpleTokenizer {
 
         line.make_ascii_lowercase();
 
+        if self.stop_words.is_some() {
+            text::replace_substr(&mut line, self.stop_words.as_ref().unwrap());
+        }
+
         let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
         let line = regexes::PUNCT_AT_END.replace_all(&line, "");
         let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
@@ -245,7 +251,7 @@ mod tests {
         let mut tokens = st.get_tokens();
         tokens.sort_unstable();
         let mut test_data = vec![
-            "UNK", "beep", "bob", "a", "my", "i'm", "boop", "hello", "name", "is", "bot",
+            "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
         ];
         test_data.sort_unstable();
         println!("{:?}", st.tokens);
@@ -283,7 +289,7 @@ mod tests {
 
         assert_eq!(
             st.decode(&test_data.unwrap()).unwrap(),
-            String::from("hello i'm UNK")
+            String::from("hello im UNK")
         )
     }
 }

@@ -34,6 +34,15 @@ pub fn flatten<T>(v: Vec<Vec<T>>) -> Vec<T> {
     v.into_iter().flatten().collect()
 }
 
+fn replace_substr(line: &mut String, substrings: &Vec<String>) {
+    for word in substrings {
+        let start = line.find(word);
+        if start.is_some() {
+            line.replace_range(start.unwrap()..word.len() - 1, "");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
