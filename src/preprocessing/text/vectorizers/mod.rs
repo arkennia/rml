@@ -17,7 +17,9 @@ Provides functionality for tokenizing and vectorizing data retrieved by the `csv
 */
 
 pub mod frequency;
+pub mod frequencybuilder;
 pub mod hashing;
 
 pub use frequency::*;
+pub use frequencybuilder::FrequencyVectorizerBuilder;
 pub use hashing::*;

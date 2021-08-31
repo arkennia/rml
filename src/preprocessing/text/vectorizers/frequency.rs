@@ -21,6 +21,8 @@ use std::error::Error;
 use crate::math::norm;
 use crate::preprocessing::text::tokenizers;
 
+use super::frequencybuilder::FrequencyVectorizerBuilder;
+
 /// The type of ngrams to keep.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ngrams {
@@ -37,18 +39,18 @@ The frequency vectorizer vectorizes text using the most common(highest frequency
 If you want to specify a different tokenizer besides `SimpleTokenizer` use the ::new method.
 */
 pub struct FrequencyVectorizer {
-    /// The number of tokens to keep.
+    /// The number of tokens to keep. If this is changed you must call `gen_tokens` again.
     pub max_features: usize,
-    /// Make all tokens lowercase.
-    pub use_lowercase: bool,
+    // /// Make all tokens lowercase.
+    // use_lowercase: bool,
     /// Use TFIDF to encode characters.
-    pub use_tfidf: bool,
+    use_tfidf: bool,
     /// Optionally normalize each vector.
-    pub norm: Option<norm::Norm>,
+    norm: Option<norm::Norm>,
     /// Optionally remove the contained stop words.
-    pub stop_words: Option<Vec<String>>,
+    stop_words: Option<Vec<String>>,
     /// The type of ngrams. Unigrams means one word only.
-    pub ngrams: Ngrams,
+    ngrams: Ngrams,
     /// The tokenizer to use contained in a Box.
     tokenizer: Box<dyn tokenizers::Tokenize>,
 }
@@ -57,22 +59,24 @@ impl Default for FrequencyVectorizer {
     fn default() -> Self {
         Self {
             max_features: 10000,
-            use_lowercase: true,
             use_tfidf: false,
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000)),
+            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000, true)),
         }
     }
 }
 
 impl FrequencyVectorizer {
-    pub fn new(max_features: usize, tokenizer: impl tokenizers::Tokenize + 'static) -> Self {
+    pub fn new(builder: FrequencyVectorizerBuilder) -> Self {
         Self {
-            max_features,
-            tokenizer: Box::new(tokenizer),
-            ..Self::default()
+            max_features: builder.max_features,
+            use_tfidf: builder.use_tfidf,
+            norm: builder.norm,
+            stop_words: builder.stop_words.clone(),
+            ngrams: builder.ngrams,
+            tokenizer: builder.tokenizer,
         }
     }
 
@@ -109,8 +113,6 @@ impl FrequencyVectorizer {
 
 #[cfg(test)]
 mod tests {
-    use crate::preprocessing::text::tokenizers::SimpleTokenizer;
-
     use super::FrequencyVectorizer;
 
     #[test]
@@ -120,7 +122,7 @@ mod tests {
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ];
-        let mut vectorizer = FrequencyVectorizer::new(15, SimpleTokenizer::default());
+        let mut vectorizer = FrequencyVectorizer::default();
         vectorizer.gen_tokens(&test_data);
         let test = vectorizer.vectorize::<i32>(&vec![
             String::from("Hello, my name is bob!"),
@@ -131,7 +133,7 @@ mod tests {
         println!("{:?}", test);
         assert_eq!(
             test.unwrap(),
-            vec![[6, 9, 10, 8, 3], [2, 4, 7, 1, 5], [2, 4, 7, 1, 3]]
+            vec![[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [6, 7, 8, 9, 5]]
         );
     }
 }

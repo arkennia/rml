@@ -20,7 +20,7 @@ punctuation, and then splits the rest into word chunks.
 ```rust
 use rml::preprocessing::text::tokenizers;
 use rml::preprocessing::text::tokenizers::Tokenize;
-let mut st = tokenizers::SimpleTokenizer::new(100);
+let mut st = tokenizers::SimpleTokenizer::new(100, true);
 st.create_tokens(&vec![
     String::from("Hello, my name is bob!"),
     String::from("Beep boop I'm a bot"),
@@ -39,7 +39,7 @@ assert_eq!(t, test_data);
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 // The unknown token string.
 const UNKNOWN_STR: &str = "UNK";
@@ -53,24 +53,28 @@ Contains the data and options for the tokenizer.
 pub struct SimpleTokenizer {
     /// Total number of tokens to create.
     pub max_tokens: usize,
-    /// The tokens we generate.
-    tokens: Vec<String>,
+    /// Make tokens lowercase.
+    pub use_lowercase: bool,
+    /// The tokens generated and their index in the frequency vector.
+    tokens: HashMap<String, (usize, u32)>,
 }
 
 impl Default for SimpleTokenizer {
     fn default() -> Self {
         Self {
             max_tokens: 10,
+            use_lowercase: true,
             tokens: Default::default(),
         }
     }
 }
 
 impl SimpleTokenizer {
-    pub fn new(max_tokens: usize) -> Self {
+    pub fn new(max_tokens: usize, use_lowercase: bool) -> Self {
         Self {
             max_tokens,
-            tokens: Vec::new(),
+            use_lowercase,
+            ..Self::default()
         }
     }
 }
@@ -80,25 +84,30 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         Create the tokens to use for tokenization of a text.
         It stores the created tokens internally, and can be retrieved wit the `get_tokens` function.
     */
-    // TODO: Implement feature mapping to only keep the x most popular. (hashmap)
-    // TODO: Add more regexes for handling more punctuation (IE not at the beginning of a sentence with no proper spacing)
-    // TODO: End of sentenence punctuation.
     fn create_tokens(&mut self, data: &[String]) {
-        let mut tokens: Vec<String> = vec![UNKNOWN_STR.to_string()];
-
-        let mut hashset: HashSet<String> = HashSet::new();
+        let mut hashmap: HashMap<String, (usize, u32)> = HashMap::new();
         for entry in data {
-            for x in regexes::FIND_WHITESPACE.split(&self.sanitize_line(entry.to_string()).trim()) {
-                hashset.insert(x.to_string());
+            for x in self.sanitize_line(entry.trim().to_string()).split(' ') {
+                let tmp = hashmap.insert(x.to_string(), (hashmap.len() + 1, 1));
+                if let Some(y) = tmp {
+                    hashmap.insert(x.to_string(), (y.0, y.1 + 1));
+                }
             }
         }
-        let mut tmp = hashset
-            .into_iter()
-            .take(self.max_tokens as usize)
-            .collect::<Vec<String>>();
-        tmp.sort_unstable();
-        tokens.extend(tmp);
-        self.tokens = tokens;
+        hashmap.remove("");
+        // Get the keys from the hashmap.
+        let mut token_keys: Vec<&String> = hashmap.keys().collect();
+        // Sort them by frequency.
+        token_keys.sort_by(|a, b| hashmap.get(*b).unwrap().1.cmp(&hashmap.get(*a).unwrap().1));
+        // Limit max_tokens.
+        token_keys = token_keys.into_iter().take(self.max_tokens).collect();
+        let mut hashmap = hashmap.to_owned();
+        hashmap.retain(|x, _b| token_keys.contains(&x));
+        // Add the unknown token to the hashmap of tokens.
+        hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
+
+        // Move hashmap to the tokenizer.
+        self.tokens = hashmap;
     }
 
     /**
@@ -112,12 +121,8 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         if !self.tokens.is_empty() {
             let input = input.to_owned();
             let mut output: Vec<i32> = Vec::default();
-            for x in regexes::FIND_WHITESPACE.split(&self.sanitize_line(input.trim().to_string())) {
-                output.push(
-                    self.tokens
-                        .binary_search(&x.to_string())
-                        .unwrap_or(UNKNOWN_IDX) as i32,
-                );
+            for x in self.sanitize_line(input.trim().to_string()).split(' ') {
+                output.push(self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0 as i32);
             }
             Some(output)
         } else {
@@ -136,13 +141,38 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         if !self.tokens.is_empty() {
             let mut output = String::new();
             for word in input {
-                output.push_str(&self.tokens[*word as usize]);
+                output.push_str(
+                    &self
+                        .tokens
+                        .iter()
+                        .find_map(|(k, val)| {
+                            if val.0 == *word as usize {
+                                Some(k.to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or_else(|| UNKNOWN_STR.to_string()),
+                );
                 output.push(' ');
             }
             Some(output.trim().to_string())
         } else {
             None
         }
+    }
+
+    /**
+    Remove all punctuation.
+    */
+    fn sanitize_line(&self, line: String) -> String {
+        let mut line: String = line;
+        line.make_ascii_lowercase();
+        // let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
+        let line = regexes::PUNCT_AT_END.replace_all(&line, "");
+        regexes::PUNCT_NOT_AT_END
+            .replace_all(&line, " ")
+            .into_owned()
     }
 
     /**
@@ -155,18 +185,18 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         }
     }
 
+    /**
+    Retrieves the list of string tokens. The order is random.
+    */
     fn get_tokens(&self) -> Vec<String> {
-        self.tokens.clone()
+        self.tokens.keys().map(|x| x.to_string()).collect()
     }
 
-    fn sanitize_line(&self, line: String) -> String {
-        let mut line: String = line;
-        line.make_ascii_lowercase();
-        let buffer = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
-        let buffer = regexes::PUNCT_AT_END.replace_all(&buffer, "");
-        regexes::PUNCT_NOT_AT_END
-            .replace_all(&buffer, " ")
-            .into_owned()
+    /**
+    Gets the term frequency of a token in the corpus.
+    */
+    fn term_frequency(&self, token: &str) -> u32 {
+        self.tokens.get(token).expect("Token not found.").1
     }
 }
 
@@ -178,43 +208,47 @@ mod tests {
 
     #[test]
     fn create_tokens_test() {
-        let mut st = SimpleTokenizer::new(100);
+        let mut st = SimpleTokenizer::new(100, true);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-        st.tokens.sort_unstable();
+        let mut tokens = st.get_tokens();
+        tokens.sort_unstable();
         let mut test_data = vec![
             "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
         ];
         test_data.sort_unstable();
-        assert_eq!(st.tokens, test_data);
+        println!("{:?}", st.tokens);
+        assert_eq!(tokens, test_data);
     }
 
     #[test]
     fn encode_test() {
-        let mut st = SimpleTokenizer::new(100);
+        let mut st = SimpleTokenizer::new(100, true);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-        st.tokens.sort_unstable();
+        let mut tokens = st.get_tokens();
+        tokens.sort_unstable();
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
-        assert_eq!(test_data, Some(vec![6, 7, 0]));
+        assert_eq!(test_data, Some(vec![1, 8, 0]));
     }
 
     #[test]
     fn decode_test() {
-        let mut st = SimpleTokenizer::new(100);
+        let mut st = SimpleTokenizer::new(100, true);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-        st.tokens.sort_unstable();
+        let mut tokens = st.get_tokens();
+        tokens.sort_unstable();
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
 
