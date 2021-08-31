@@ -51,8 +51,8 @@ Contains the data and options for the tokenizer.
 */
 #[derive(Debug, Clone)]
 pub struct SimpleTokenizer {
-    /// Total number of tokens to create.
-    pub max_tokens: usize,
+    /// Total number of tokens to create. Set to -1 to keep all.
+    pub max_tokens: i32,
     /// Make tokens lowercase.
     pub use_lowercase: bool,
     /// The tokens generated and their index in the frequency vector.
@@ -70,7 +70,7 @@ impl Default for SimpleTokenizer {
 }
 
 impl SimpleTokenizer {
-    pub fn new(max_tokens: usize, use_lowercase: bool) -> Self {
+    pub fn new(max_tokens: i32, use_lowercase: bool) -> Self {
         Self {
             max_tokens,
             use_lowercase,
@@ -95,15 +95,20 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             }
         }
         hashmap.remove("");
-        // Get the keys from the hashmap.
-        let mut token_keys: Vec<&String> = hashmap.keys().collect();
-        // Sort them by frequency.
-        token_keys.sort_by(|a, b| hashmap.get(*b).unwrap().1.cmp(&hashmap.get(*a).unwrap().1));
-        // Limit max_tokens.
-        token_keys = token_keys.into_iter().take(self.max_tokens).collect();
-        let mut hashmap = hashmap.to_owned();
-        hashmap.retain(|x, _b| token_keys.contains(&x));
-        // Add the unknown token to the hashmap of tokens.
+        if self.max_tokens > 0 {
+            // Get the keys from the hashmap.
+            let mut token_keys: Vec<&String> = hashmap.keys().collect();
+            // Sort them by frequency.
+            token_keys.sort_by(|a, b| hashmap.get(*b).unwrap().1.cmp(&hashmap.get(*a).unwrap().1));
+            // Limit max_tokens.
+            token_keys = token_keys
+                .into_iter()
+                .take(self.max_tokens as usize)
+                .collect();
+            let mut hashmap = hashmap.to_owned();
+            hashmap.retain(|x, _b| token_keys.contains(&x));
+            // Add the unknown token to the hashmap of tokens.
+        }
         hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
 
         // Move hashmap to the tokenizer.
@@ -179,7 +184,7 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     Change the number of tokens to create. For this to take effect, you must call
     `create_tokens` again.
     */
-    fn set_max_tokens(&mut self, max_tokens: usize) {
+    fn set_max_tokens(&mut self, max_tokens: i32) {
         if max_tokens > 0 {
             self.max_tokens = max_tokens;
         }
@@ -236,6 +241,7 @@ mod tests {
         tokens.sort_unstable();
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
+        println!("{:?}", tokens);
         assert_eq!(test_data, Some(vec![1, 8, 0]));
     }
 

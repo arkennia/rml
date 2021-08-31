@@ -18,7 +18,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use rml::preprocessing::text;
 
-const DATASIZES: [usize; 5] = [50, 100, 1000, 10000, 1000000];
+const DATASIZES: [i32; 5] = [50, 100, 1000, 10000, 1000000];
 
 pub fn vectorizer_bench(c: &mut Criterion) {
     let mut fv = text::FrequencyVectorizer::default();

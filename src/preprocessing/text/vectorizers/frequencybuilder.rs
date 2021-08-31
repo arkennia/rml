@@ -15,30 +15,18 @@
 /*!
 Builds a new FrequencyVectorizer.
 All options are configurable at run time and will
-use sane defaults. See example and function documentation for more information.
-*/
-
-/*!
-    # Example
-    ```rust
-    use rml::preprocessing::text::{tokenizers, vectorizers};
-    use rml::math::norm;
-
-    let builder = vectorizers::FrequencyVectorizerBuilder::new(10, true)
-            .with_ngram_type(vectorizers::Ngrams::Unigram)
-            .with_norm(norm::Norm::L2)
-            .with_stop_words(Vec::new())
-            .with_tfidf(true)
-            .with_tokenizer(Box::new(tokenizers::SimpleTokenizer::new(10, true)));
-    let mut vectorizer = builder.build();
-    ```
+use sane defaults.
 */
 
 use super::frequency::*;
 use crate::{math::norm, preprocessing::text::tokenizers};
 
+/**
+    A builder for creating FreqeuncyVectorizers.
+*/
 pub struct FrequencyVectorizerBuilder {
-    pub max_features: usize,
+    /// The number of features to keep. Set to -1 to keep all.
+    pub max_features: i32,
     /// Make all tokens lowercase.
     pub use_lowercase: bool,
     /// Use TFIDF to encode characters.
@@ -54,7 +42,7 @@ pub struct FrequencyVectorizerBuilder {
 }
 
 impl FrequencyVectorizerBuilder {
-    pub fn new(max_features: usize, use_lowercase: bool) -> Self {
+    pub fn new(max_features: i32, use_lowercase: bool) -> Self {
         Self {
             max_features,
             use_lowercase,
@@ -127,7 +115,7 @@ mod tests {
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-
+        println!("{:?}", vectorizer.get_tokens());
         println!("{:?}", test);
         assert_eq!(
             test.unwrap(),

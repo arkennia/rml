@@ -39,8 +39,8 @@ The frequency vectorizer vectorizes text using the most common(highest frequency
 If you want to specify a different tokenizer besides `SimpleTokenizer` use the ::new method.
 */
 pub struct FrequencyVectorizer {
-    /// The number of tokens to keep. If this is changed you must call `gen_tokens` again.
-    pub max_features: usize,
+    /// The number of tokens to keep. If this is changed you must call `gen_tokens` again. Set to -1 to keep all.
+    pub max_features: i32,
     // /// Make all tokens lowercase.
     // use_lowercase: bool,
     /// Use TFIDF to encode characters.
