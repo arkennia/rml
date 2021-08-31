@@ -33,12 +33,12 @@ pub fn vectorizer_bench(c: &mut Criterion) {
     )
     .unwrap();
     let data = text::flatten(data.0);
-    fv.gen_tokens(&data);
 
     for i in DATASIZES {
         let mut fv = text::FrequencyVectorizer::default();
         fv.max_features = i;
         fv.gen_tokens(&data);
+        println!("{:?}", fv.max_features);
         println!("{:?}", fv.get_tokens());
         group.throughput(Throughput::Elements(data.len() as u64));
         group.bench_with_input(

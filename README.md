@@ -31,3 +31,5 @@ Citation: Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://
 
 The IMDB dataset is from:
 Andrew L. Maas, Raymond E. Daly, Peter T. Pham, Dan Huang, Andrew Y. Ng, and Christopher Potts. (2011). Learning Word Vectors for Sentiment Analysis. The 49th Annual Meeting of the Association for Computational Linguistics (ACL 2011).
+
+The stop words were downloaded from the NLTK corpus. They include a README from that link and can also be found at [http://www.nltk.org/nltk_data/]. The NLTK is licensed under Apache 2.0.

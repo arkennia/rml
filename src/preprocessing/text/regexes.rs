@@ -21,11 +21,12 @@ use regex::Regex;
 
 lazy_static! {
     /// Finds all punctuation and symbols within a string. Safe to replace with "".
-    pub static ref PUNCT_AT_END: Regex = Regex::new("([,@#!\\?\"'.])\\B|[']\\b").unwrap();
+    pub static ref PUNCT_AT_END: Regex = Regex::new("[^\\w\\s]\\B").unwrap();
     /// Finds all punctuation not at the end(not followed by a space). We want to replace with " " when using this one.
-    pub static ref PUNCT_NOT_AT_END: Regex = Regex::new("([,@#!\\?\"'.])\\b").unwrap();
+    pub static ref PUNCT_NOT_AT_END: Regex = Regex::new("[^\\w\\s']\\b").unwrap();
     pub static ref PUNCT_RM_CONTRACTIONS: Regex = Regex::new("[']\\b").unwrap();
-    pub static ref DOUBLE_WHITESPACE: Regex = Regex::new("\\s(?=\\s)").unwrap();
+    pub static ref PUNCT_RM_U85_BR: Regex = Regex::new("(\\u{85})|(<br )").unwrap();
+    pub static ref DOUBLE_WHITESPACE: Regex = Regex::new("\\s{2,}").unwrap();
     /// Finds everything not a character or number. Used to split on whitespace.
     pub static ref FIND_WHITESPACE: Regex = Regex::new("[^A-Za-z0-9]").unwrap();
     // Punct at end follow by a space. Safe to just remove and replace with "".

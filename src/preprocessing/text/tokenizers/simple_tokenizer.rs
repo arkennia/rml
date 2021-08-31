@@ -14,7 +14,8 @@
 
 /*!
 Simple Tokenizer that implements the `Tokenize` trait. This tokenizer first removes all
-punctuation, and then splits the rest into word chunks.
+punctuation, and then splits the rest into word chunks. There are some sacrifices made in
+regex to increase accuracy of tokenization, at the detriment to throughput.
 
 # Example
 ```rust
@@ -108,11 +109,16 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             let mut hashmap = hashmap.to_owned();
             hashmap.retain(|x, _b| token_keys.contains(&x));
             // Add the unknown token to the hashmap of tokens.
-        }
-        hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
+            hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
 
-        // Move hashmap to the tokenizer.
-        self.tokens = hashmap;
+            // Move hashmap to the tokenizer.
+            self.tokens = hashmap;
+        } else {
+            hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
+
+            // Move hashmap to the tokenizer.
+            self.tokens = hashmap;
+        }
     }
 
     /**
@@ -173,8 +179,11 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     fn sanitize_line(&self, line: String) -> String {
         let mut line: String = line;
         line.make_ascii_lowercase();
-        // let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
+
+        let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
         let line = regexes::PUNCT_AT_END.replace_all(&line, "");
+        let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
+        let line = regexes::DOUBLE_WHITESPACE.replace_all(&line, " ");
         regexes::PUNCT_NOT_AT_END
             .replace_all(&line, " ")
             .into_owned()
