@@ -63,7 +63,7 @@ impl Default for FrequencyVectorizer {
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000, true)),
+            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000, true, None)),
         }
     }
 }
@@ -81,6 +81,8 @@ impl FrequencyVectorizer {
     }
 
     pub fn gen_tokens(&mut self, data: &[String]) {
+        // Move stop words into the tokenizer.
+        self.tokenizer.set_stop_words(self.stop_words.take());
         self.tokenizer.set_max_tokens(self.max_features);
         self.tokenizer.create_tokens(data);
     }

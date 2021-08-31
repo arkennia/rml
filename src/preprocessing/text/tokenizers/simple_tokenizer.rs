@@ -21,7 +21,7 @@ regex to increase accuracy of tokenization, at the detriment to throughput.
 ```rust
 use rml::preprocessing::text::tokenizers;
 use rml::preprocessing::text::tokenizers::Tokenize;
-let mut st = tokenizers::SimpleTokenizer::new(100, true);
+let mut st = tokenizers::SimpleTokenizer::new(100, true, None);
 st.create_tokens(&vec![
     String::from("Hello, my name is bob!"),
     String::from("Beep boop I'm a bot"),
@@ -30,7 +30,7 @@ st.create_tokens(&vec![
 let mut t = st.get_tokens();
 t.sort_unstable();
 let mut test_data = vec![
-    "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
+    "UNK", "beep", "bob", "a", "my", "i'm", "boop", "hello", "name", "is", "bot",
 ];
 test_data.sort_unstable();
 assert_eq!(t, test_data);
@@ -56,6 +56,8 @@ pub struct SimpleTokenizer {
     pub max_tokens: i32,
     /// Make tokens lowercase.
     pub use_lowercase: bool,
+    /// Stop words to remove.
+    stop_words: Option<Vec<String>>,
     /// The tokens generated and their index in the frequency vector.
     tokens: HashMap<String, (usize, u32)>,
 }
@@ -65,16 +67,18 @@ impl Default for SimpleTokenizer {
         Self {
             max_tokens: 10,
             use_lowercase: true,
+            stop_words: None,
             tokens: Default::default(),
         }
     }
 }
 
 impl SimpleTokenizer {
-    pub fn new(max_tokens: i32, use_lowercase: bool) -> Self {
+    pub fn new(max_tokens: i32, use_lowercase: bool, stop_words: Option<Vec<String>>) -> Self {
         Self {
             max_tokens,
             use_lowercase,
+            stop_words: stop_words,
             ..Self::default()
         }
     }
@@ -176,14 +180,17 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     /**
     Remove all punctuation.
     */
+    // TODO: Implement stop words when remove_matches is no longer in nightly.
     fn sanitize_line(&self, line: String) -> String {
         let mut line: String = line;
+
         line.make_ascii_lowercase();
 
         let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, "");
         let line = regexes::PUNCT_AT_END.replace_all(&line, "");
         let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
         let line = regexes::DOUBLE_WHITESPACE.replace_all(&line, " ");
+
         regexes::PUNCT_NOT_AT_END
             .replace_all(&line, " ")
             .into_owned()
@@ -197,6 +204,13 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         if max_tokens > 0 {
             self.max_tokens = max_tokens;
         }
+    }
+
+    /**
+    Sets the stops words to use.
+     */
+    fn set_stop_words(&mut self, stop_words: Option<Vec<String>>) {
+        self.stop_words = stop_words;
     }
 
     /**
@@ -222,7 +236,7 @@ mod tests {
 
     #[test]
     fn create_tokens_test() {
-        let mut st = SimpleTokenizer::new(100, true);
+        let mut st = SimpleTokenizer::new(100, true, None);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
@@ -231,7 +245,7 @@ mod tests {
         let mut tokens = st.get_tokens();
         tokens.sort_unstable();
         let mut test_data = vec![
-            "UNK", "beep", "bob", "a", "my", "im", "boop", "hello", "name", "is", "bot",
+            "UNK", "beep", "bob", "a", "my", "i'm", "boop", "hello", "name", "is", "bot",
         ];
         test_data.sort_unstable();
         println!("{:?}", st.tokens);
@@ -240,7 +254,7 @@ mod tests {
 
     #[test]
     fn encode_test() {
-        let mut st = SimpleTokenizer::new(100, true);
+        let mut st = SimpleTokenizer::new(100, true, None);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
@@ -256,7 +270,7 @@ mod tests {
 
     #[test]
     fn decode_test() {
-        let mut st = SimpleTokenizer::new(100, true);
+        let mut st = SimpleTokenizer::new(100, true, None);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
@@ -269,7 +283,7 @@ mod tests {
 
         assert_eq!(
             st.decode(&test_data.unwrap()).unwrap(),
-            String::from("hello im UNK")
+            String::from("hello i'm UNK")
         )
     }
 }

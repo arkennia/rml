@@ -27,6 +27,7 @@ pub trait Tokenize {
     fn decode(&self, input: &[i32]) -> Option<String>;
     fn sanitize_line(&self, line: String) -> String;
     fn set_max_tokens(&mut self, max_tokens: i32);
+    fn set_stop_words(&mut self, stop_words: Option<Vec<String>>);
     fn get_tokens(&self) -> Vec<String>;
     fn term_frequency(&self, token: &str) -> u32;
 }

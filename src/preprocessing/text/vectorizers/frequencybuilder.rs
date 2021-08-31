@@ -53,6 +53,7 @@ impl FrequencyVectorizerBuilder {
             tokenizer: Box::new(tokenizers::SimpleTokenizer::new(
                 max_features,
                 use_lowercase,
+                None,
             )),
         }
     }
@@ -107,7 +108,7 @@ mod tests {
         let builder = FrequencyVectorizerBuilder::new(10, true)
             .with_ngram_type(Ngrams::Unigram)
             .with_tfidf(false)
-            .with_tokenizer(Box::new(tokenizers::SimpleTokenizer::new(10, true)));
+            .with_tokenizer(Box::new(tokenizers::SimpleTokenizer::new(10, true, None)));
         let mut vectorizer = builder.build();
         vectorizer.gen_tokens(&test_data);
         let test = vectorizer.vectorize::<i32>(&vec![
