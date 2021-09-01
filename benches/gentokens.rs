@@ -18,13 +18,11 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use rml::preprocessing::text;
 
-const DATASIZES: [i32; 5] = [50, 100, 1000, 10000, 100000];
+const DATASIZES: [i32; 5] = [50, 100, 1000, 10000, 1000000];
 
-pub fn vectorizer_bench(c: &mut Criterion) {
-    let mut fv = text::FrequencyVectorizer::default();
-    fv.max_features = 50;
-    let mut group = c.benchmark_group("IMDB Vectorization");
-    group.sample_size(50);
+pub fn tokenizer_bench(c: &mut Criterion) {
+    let mut group = c.benchmark_group("IMDB Tokenization");
+    group.sample_size(25);
 
     let data = text::csv::parse_csv_with_labels::<String, String>(
         "./data/test_data/IMDB_Dataset.csv",
@@ -37,17 +35,14 @@ pub fn vectorizer_bench(c: &mut Criterion) {
     for i in DATASIZES {
         let mut fv = text::FrequencyVectorizer::default();
         fv.max_features = i;
-        fv.gen_tokens(&data);
-        println!("{:?}", fv.max_features);
-        println!("{:?}", fv.get_tokens());
         group.throughput(Throughput::Elements(data.len() as u64));
         group.bench_with_input(
             BenchmarkId::new("IMDB FreqVec w/ Simple Tokenizer", i),
             &i,
-            |b, _| b.iter(|| fv.vectorize::<i32>(black_box(&data))),
+            |b, _| b.iter(|| fv.gen_tokens(black_box(&data))),
         );
     }
 }
 
-criterion_group!(benches, vectorizer_bench);
+criterion_group!(benches, tokenizer_bench);
 criterion_main!(benches);

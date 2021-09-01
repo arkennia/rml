@@ -40,6 +40,7 @@ use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 // The unknown token string.
 const UNKNOWN_STR: &str = "UNK";
@@ -81,28 +82,10 @@ impl SimpleTokenizer {
             ..Self::default()
         }
     }
-}
 
-impl tokenizers::Tokenize for SimpleTokenizer {
-    /**
-        Create the tokens to use for tokenization of a text.
-        It stores the created tokens internally, and can be retrieved wit the `get_tokens` function.
-    */
-    fn create_tokens(&mut self, data: &[String]) {
-        let mut hashmap: HashMap<String, (usize, u32)> = HashMap::new();
-        for entry in data {
-            for x in self.sanitize_line(entry.trim().to_string()).split(' ') {
-                if let Some(stop_words) = &self.stop_words {
-                    if stop_words.contains(&x.to_string()) {
-                        continue;
-                    }
-                }
-                let tmp = hashmap.insert(x.to_string(), (hashmap.len() + 1, 1));
-                if let Some(y) = tmp {
-                    hashmap.insert(x.to_string(), (y.0, y.1 + 1));
-                }
-            }
-        }
+    // Gets the most frequent terms in the corpus by document frequency.
+    // Used in the create tokens function.
+    fn compute_most_frequent(&mut self, mut hashmap: HashMap<String, (usize, u32)>) {
         hashmap.remove("");
         if self.max_tokens > 0 {
             // Get the keys from the hashmap.
@@ -127,6 +110,52 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             // Move hashmap to the tokenizer.
             self.tokens = hashmap;
         }
+    }
+}
+
+impl tokenizers::Tokenize for SimpleTokenizer {
+    /**
+        Create the tokens to use for tokenization of a text.
+        It stores the created tokens internally, and can be retrieved with the `get_tokens` function.
+    */
+    // TODO: Parallelize
+    fn create_tokens(&mut self, data: &[String]) {
+        // <Token, (index, count)>
+        let mut hashmap: HashMap<String, (usize, u32)> = HashMap::new();
+        let mut line: Vec<String> = Vec::new();
+        let mut doc_tokens: HashSet<String> = HashSet::new();
+
+        for entry in data {
+            let trimmed_entry = &entry.trim().to_string();
+            // Extend the line vector with the strings contained in the split string.
+            line.extend(
+                self.sanitize_line(trimmed_entry.to_string())
+                    .split(' ')
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>(),
+            );
+            for x in &line {
+                // If x is a stop word, ignore it.
+                if let Some(stop_words) = &self.stop_words {
+                    if stop_words.contains(&x) {
+                        continue;
+                    }
+                }
+                // If this token, x, has already been seen in this document, do not count it.
+                // This is because we want document frequency, not overall corpus frequency.
+                if !doc_tokens.contains(&*x) {
+                    let tmp = hashmap.insert(x.to_string(), (hashmap.len() + 1, 1));
+                    if let Some(y) = tmp {
+                        hashmap.insert(x.to_string(), (y.0, y.1 + 1));
+                    }
+                    doc_tokens.insert(x.clone()); // I don't really know a better way to do this.
+                }
+            }
+            doc_tokens.clear();
+            line.clear();
+        }
+        self.compute_most_frequent(hashmap);
     }
 
     /**
@@ -292,5 +321,19 @@ mod tests {
             st.decode(&test_data.unwrap()).unwrap(),
             String::from("hello i m UNK")
         )
+    }
+
+    // We want to verify it is counting DOCUMENT frequency not CORPUS frequency.
+    #[test]
+    fn doc_count_test() {
+        let mut st = SimpleTokenizer::new(100, true, None);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep beep I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+
+        assert_eq!(st.term_frequency("beep"), 2);
+        assert_eq!(st.term_frequency("bob"), 2);
     }
 }

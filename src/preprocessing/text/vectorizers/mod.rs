@@ -23,3 +23,5 @@ pub mod hashing;
 pub use frequency::*;
 pub use frequencybuilder::FrequencyVectorizerBuilder;
 pub use hashing::*;
+
+// pub fn calculate_tfidf
