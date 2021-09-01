@@ -116,7 +116,15 @@ impl SimpleTokenizer {
         }
     }
 
-    fn create_ngrams(&self, line: Vec<String>) -> Vec<String> {
+    /**
+    Creates the ngrams while tokenizing. This also removes stop words because we do not want them
+    in our ngrams.
+    */
+    fn create_ngrams(&self, mut line: Vec<String>) -> Vec<String> {
+        if let Some(stop_words) = &self.stop_words {
+            line = line.into_iter().filter(|x| !stop_words.contains(x)).collect();
+        }
+
         match self.ngrams {
             Ngrams::Unigram => line,
             Ngrams::Bigram => SimpleTokenizer::compute_bigrams(&line),
@@ -124,7 +132,7 @@ impl SimpleTokenizer {
         }
     }
 
-    pub fn compute_bigrams(line: &Vec<String>) -> Vec<String> {
+    fn compute_bigrams(line: &Vec<String>) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
         for i in 0..line.len() - 1 {
             output.push(line[i].to_string() + " " + &line[i + 1].to_string());
@@ -133,7 +141,7 @@ impl SimpleTokenizer {
     }
 
     #[inline]
-    pub fn compute_both_ngrams(line: Vec<String>) -> Vec<String> {
+    fn compute_both_ngrams(line: Vec<String>) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
         output.extend(SimpleTokenizer::compute_bigrams(&line));
         output.extend(line);
@@ -166,12 +174,6 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             );
             line = self.create_ngrams(line);
             for x in &line {
-                // If x is a stop word, ignore it.
-                if let Some(stop_words) = &self.stop_words {
-                    if stop_words.contains(&x) {
-                        continue;
-                    }
-                }
                 // If this token, x, has already been seen in this document, do not count it.
                 // This is because we want document frequency, not overall corpus frequency.
                 if !doc_tokens.contains(&*x) {
@@ -372,13 +374,45 @@ mod tests {
     }
 
     #[test]
-    fn ngram_test() {
+    fn bigram_test() {
         let mut st = SimpleTokenizer::new(100, true, None);
         st.set_ngrams(Ngrams::Bigram);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
         ]);
         let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob"];
+        test_data.sort_unstable();
+
+        let mut st_tokens = st.get_tokens();
+        st_tokens.sort_unstable();
+                
+        assert_eq!(st_tokens, test_data);
+    }
+
+    #[test]
+    fn bothgram_test() {
+        let mut st = SimpleTokenizer::new(100, true, None);
+        st.set_ngrams(Ngrams::Both);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+        ]);
+        let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob", "hello", "my", "name", "is", "bob"];
+        test_data.sort_unstable();
+
+        let mut st_tokens = st.get_tokens();
+        st_tokens.sort_unstable();
+                
+        assert_eq!(st_tokens, test_data);
+    }
+
+    #[test]
+    fn bothgram_with_stop_test() {
+        let mut st = SimpleTokenizer::new(100, true, Some(text::stop_words::load_stop_words("english")));
+        st.set_ngrams(Ngrams::Both);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+        ]);
+        let mut test_data = vec!["UNK", "bob", "hello", "hello name", "name", "name bob"];
         test_data.sort_unstable();
 
         let mut st_tokens = st.get_tokens();
