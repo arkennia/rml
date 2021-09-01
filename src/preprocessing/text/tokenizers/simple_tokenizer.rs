@@ -36,6 +36,7 @@ assert_eq!(t, test_data);
 ```
 */
 
+use crate::preprocessing::text::Ngrams;
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
 
@@ -58,6 +59,8 @@ pub struct SimpleTokenizer {
     pub use_lowercase: bool,
     /// Stop words to remove.
     stop_words: Option<Vec<String>>,
+    /// Type of ngrams to use.
+    ngrams: Ngrams,
     /// The tokens generated and their index in the frequency vector.
     tokens: HashMap<String, (usize, u32)>,
 }
@@ -68,6 +71,7 @@ impl Default for SimpleTokenizer {
             max_tokens: 10,
             use_lowercase: true,
             stop_words: None,
+            ngrams: Ngrams::Unigram,
             tokens: Default::default(),
         }
     }
@@ -111,6 +115,31 @@ impl SimpleTokenizer {
             self.tokens = hashmap;
         }
     }
+
+    fn create_ngrams(&self, line: Vec<String>) -> Vec<String> {
+        match self.ngrams {
+            Ngrams::Unigram => line,
+            Ngrams::Bigram => SimpleTokenizer::compute_bigrams(&line),
+            Ngrams::Both => SimpleTokenizer::compute_both_ngrams(line),
+        }
+    }
+
+    pub fn compute_bigrams(line: &Vec<String>) -> Vec<String> {
+        let mut output: Vec<String> = Vec::new();
+        for i in 0..line.len() - 1 {
+            output.push(line[i].to_string() + " " + &line[i + 1].to_string());
+        }
+        output
+    }
+
+    #[inline]
+    pub fn compute_both_ngrams(line: Vec<String>) -> Vec<String> {
+        let mut output: Vec<String> = Vec::new();
+        output.extend(SimpleTokenizer::compute_bigrams(&line));
+        output.extend(line);
+        output
+    }
+
 }
 
 impl tokenizers::Tokenize for SimpleTokenizer {
@@ -135,6 +164,7 @@ impl tokenizers::Tokenize for SimpleTokenizer {
                     .map(|x| x.to_string())
                     .collect::<Vec<String>>(),
             );
+            line = self.create_ngrams(line);
             for x in &line {
                 // If x is a stop word, ignore it.
                 if let Some(stop_words) = &self.stop_words {
@@ -250,6 +280,10 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         self.stop_words = stop_words;
     }
 
+    fn set_ngrams(&mut self, ngrams: Ngrams) {
+        self.ngrams = ngrams;
+    }
+
     /**
     Retrieves the list of string tokens. The order is random.
     */
@@ -335,5 +369,21 @@ mod tests {
 
         assert_eq!(st.term_frequency("beep"), 2);
         assert_eq!(st.term_frequency("bob"), 2);
+    }
+
+    #[test]
+    fn ngram_test() {
+        let mut st = SimpleTokenizer::new(100, true, None);
+        st.set_ngrams(Ngrams::Bigram);
+        st.create_tokens(&vec![
+            String::from("Hello, my name is bob!"),
+        ]);
+        let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob"];
+        test_data.sort_unstable();
+
+        let mut st_tokens = st.get_tokens();
+        st_tokens.sort_unstable();
+                
+        assert_eq!(st_tokens, test_data);
     }
 }

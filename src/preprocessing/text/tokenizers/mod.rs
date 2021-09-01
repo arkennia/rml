@@ -21,6 +21,8 @@ Defines the `Tokenize` trait for creating Tokenizers.
 pub mod simple_tokenizer;
 
 pub use simple_tokenizer::SimpleTokenizer;
+
+use super::Ngrams;
 pub trait Tokenize {
     fn create_tokens(&mut self, data: &[String]);
     fn encode(&self, input: &str) -> Option<Vec<i32>>;
@@ -28,6 +30,7 @@ pub trait Tokenize {
     fn sanitize_line(&self, line: String) -> String;
     fn set_max_tokens(&mut self, max_tokens: i32);
     fn set_stop_words(&mut self, stop_words: Option<Vec<String>>);
+    fn set_ngrams(&mut self, ngrams: Ngrams);
     fn get_tokens(&self) -> Vec<String>;
     fn term_frequency(&self, token: &str) -> u32;
 }

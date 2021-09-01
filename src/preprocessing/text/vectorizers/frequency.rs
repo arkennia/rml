@@ -84,6 +84,7 @@ impl FrequencyVectorizer {
         // Move stop words into the tokenizer.
         self.tokenizer.set_stop_words(self.stop_words.take());
         self.tokenizer.set_max_tokens(self.max_features);
+        self.tokenizer.set_ngrams(self.ngrams);
         self.tokenizer.create_tokens(data);
     }
 
