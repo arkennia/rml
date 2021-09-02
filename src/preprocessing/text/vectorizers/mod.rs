@@ -24,4 +24,24 @@ pub use frequency::*;
 pub use frequencybuilder::FrequencyVectorizerBuilder;
 pub use hashing::*;
 
-// pub fn calculate_tfidf
+pub fn calculate_tfidf(count_in_doc: f64, docs_in_corpus: i32, docs_containing_token: i32) -> f64 {
+    if count_in_doc == 0.0 {
+        return 0.0;
+    }
+
+    let tf = 1.0 + (count_in_doc).log10();
+    let idf = (docs_in_corpus as f64 / (1.0 + docs_containing_token as f64)).log10();
+    tf * idf
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::preprocessing::text::calculate_tfidf;
+
+    #[test]
+    fn calculate_tfidf_test() {
+        let tmp = calculate_tfidf(3.0, 50000, 1000);
+        println!("{:?}", tmp);
+        assert!((2.5089435194649936 - calculate_tfidf(3.0, 50000, 1000)).abs() < f64::EPSILON);
+    }
+}

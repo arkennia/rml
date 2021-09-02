@@ -18,7 +18,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use rml::preprocessing::text;
 
-const DATASIZES: [i32; 5] = [50, 100, 1000, 10000, 100000];
+const DATASIZES: [i32; 4] = [50, 100, 1000, 10000];
 
 pub fn vectorizer_bench(c: &mut Criterion) {
     let mut fv = text::FrequencyVectorizer::default();
@@ -44,7 +44,7 @@ pub fn vectorizer_bench(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("IMDB FreqVec w/ Simple Tokenizer", i),
             &i,
-            |b, _| b.iter(|| fv.vectorize::<i32>(black_box(&data))),
+            |b, _| b.iter(|| fv.vectorize(black_box(&data))),
         );
     }
 }

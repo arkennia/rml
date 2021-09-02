@@ -22,7 +22,7 @@ regex to increase accuracy of tokenization, at the detriment to throughput.
 use rml::preprocessing::text::tokenizers;
 use rml::preprocessing::text::tokenizers::Tokenize;
 
-let mut st = tokenizers::SimpleTokenizer::new(100, true, None);
+let mut st = tokenizers::BagOfWords::new(100, true, None);
 st.create_tokens(&vec![
     String::from("Hello, my name is bob!"),
     String::from("Beep boop I'm a bot"),
@@ -52,7 +52,7 @@ const UNKNOWN_IDX: usize = 0;
 Contains the data and options for the tokenizer.
 */
 #[derive(Debug, Clone)]
-pub struct SimpleTokenizer {
+pub struct BagOfWords {
     /// Total number of tokens to create. Set to -1 to keep all.
     pub max_tokens: i32,
     /// Make tokens lowercase.
@@ -61,23 +61,29 @@ pub struct SimpleTokenizer {
     stop_words: Option<Vec<String>>,
     /// Type of ngrams to use.
     ngrams: Ngrams,
+    /// Number of documents in corpus.
+    num_documents: i32,
     /// The tokens generated and their index in the frequency vector.
     tokens: HashMap<String, (usize, u32)>,
+    /// Used to lookup by index.
+    tokens_as_idx: Vec<String>,
 }
 
-impl Default for SimpleTokenizer {
+impl Default for BagOfWords {
     fn default() -> Self {
         Self {
             max_tokens: 10,
             use_lowercase: true,
             stop_words: None,
             ngrams: Ngrams::Unigram,
+            num_documents: 0,
             tokens: Default::default(),
+            tokens_as_idx: Default::default(),
         }
     }
 }
 
-impl SimpleTokenizer {
+impl BagOfWords {
     pub fn new(max_tokens: i32, use_lowercase: bool, stop_words: Option<Vec<String>>) -> Self {
         Self {
             max_tokens,
@@ -130,8 +136,8 @@ impl SimpleTokenizer {
 
         match self.ngrams {
             Ngrams::Unigram => line,
-            Ngrams::Bigram => SimpleTokenizer::compute_bigrams(&line),
-            Ngrams::Both => SimpleTokenizer::compute_both_ngrams(line),
+            Ngrams::Bigram => BagOfWords::compute_bigrams(&line),
+            Ngrams::Both => BagOfWords::compute_both_ngrams(line),
         }
     }
 
@@ -146,13 +152,13 @@ impl SimpleTokenizer {
     #[inline]
     fn compute_both_ngrams(line: Vec<String>) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
-        output.extend(SimpleTokenizer::compute_bigrams(&line));
+        output.extend(BagOfWords::compute_bigrams(&line));
         output.extend(line);
         output
     }
 }
 
-impl tokenizers::Tokenize for SimpleTokenizer {
+impl tokenizers::Tokenize for BagOfWords {
     /**
         Create the tokens to use for tokenization of a text.
         It stores the created tokens internally, and can be retrieved with the `get_tokens` function.
@@ -163,6 +169,7 @@ impl tokenizers::Tokenize for SimpleTokenizer {
         let mut hashmap: HashMap<String, (usize, u32)> = HashMap::new();
         let mut line: Vec<String> = Vec::new();
         let mut doc_tokens: HashSet<String> = HashSet::new();
+        self.num_documents = data.len() as i32;
 
         for entry in data {
             let trimmed_entry = &entry.trim().to_string();
@@ -190,11 +197,12 @@ impl tokenizers::Tokenize for SimpleTokenizer {
             line.clear();
         }
         self.compute_most_frequent(hashmap);
+        self.tokens_as_idx = self.get_tokens();
     }
 
     /**
-    Turn the given string into a vector of integers matching the corrrect feature,
-    or place a 0 for unknown tokens.
+    Turn the given string into a vector of integers of size `max_features.` It will place
+    the frequency of any token `x` in the corresponding index.
 
     # Note
     If the `create_tokens` function was not called before this one, it will return none.
@@ -202,14 +210,15 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     fn encode(&self, input: &str) -> Option<Vec<i32>> {
         if !self.tokens.is_empty() {
             let input = input.to_owned();
-            let mut output: Vec<i32> = Vec::default();
+            let mut output: Vec<i32> = Vec::with_capacity(self.tokens.len());
+            output.resize(self.tokens.len(), 0);
             for x in self.sanitize_line(input.trim().to_string()).split(' ') {
                 if let Some(stop_words) = &self.stop_words {
                     if stop_words.contains(&x.to_string()) {
                         continue;
                     }
                 }
-                output.push(self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0 as i32);
+                output[self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0 as usize] += 1;
             }
             Some(output)
         } else {
@@ -227,29 +236,37 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     # Note
     If the `create_tokens` function was not called before this one, it will return none.
     */
-    fn decode(&self, input: &[i32]) -> Option<String> {
-        if !self.tokens.is_empty() {
-            let mut output = String::new();
-            for word in input {
-                output.push_str(
-                    &self
-                        .tokens
-                        .iter()
-                        .find_map(|(k, val)| {
-                            if val.0 == *word as usize {
-                                Some(k.to_string())
-                            } else {
-                                None
-                            }
-                        })
-                        .unwrap_or_else(|| UNKNOWN_STR.to_string()),
-                );
-                output.push(' ');
-            }
-            Some(output.trim().to_string())
-        } else {
-            None
-        }
+    // fn decode(&self, input: &[i32]) -> Option<String> {
+    //     if !self.tokens.is_empty() {
+    //         let mut output = String::new();
+    //         for word in input {
+    //             output.push_str(
+    //                 &self
+    //                     .tokens
+    //                     .iter()
+    //                     .find_map(|(k, val)| {
+    //                         if val.0 == *word as usize {
+    //                             Some(k.to_string())
+    //                         } else {
+    //                             None
+    //                         }
+    //                     })
+    //                     .unwrap_or_else(|| UNKNOWN_STR.to_string()),
+    //             );
+    //             output.push(' ');
+    //         }
+    //         Some(output.trim().to_string())
+    //     } else {
+    //         None
+    //     }
+    // }
+
+    /**
+    This tokenizer uses a "Bag of Words" encoding process, and such order is not maintained.
+    Therefore, it is not possible to decode, and so this will always return none.
+     */
+    fn decode(&self, _input: &[i32]) -> Option<String> {
+        None
     }
 
     /**
@@ -258,7 +275,9 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     fn sanitize_line(&self, line: String) -> String {
         let mut line: String = line;
 
-        line.make_ascii_lowercase();
+        if self.use_lowercase {
+            line.make_ascii_lowercase();
+        }
 
         let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, " ");
         let line = regexes::PUNCT_AT_END.replace_all(&line, "");
@@ -281,6 +300,13 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     }
 
     /**
+    Sets whether or not to use lowercase.
+     */
+    fn set_use_lowercase(&mut self, use_lowercase: bool) {
+        self.use_lowercase = use_lowercase;
+    }
+
+    /**
     Sets the stops words to use.
      */
     fn set_stop_words(&mut self, stop_words: Option<Vec<String>>) {
@@ -295,14 +321,36 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     Retrieves the list of string tokens. The order is random.
     */
     fn get_tokens(&self) -> Vec<String> {
-        self.tokens.keys().map(|x| x.to_string()).collect()
+        let mut unsorted: Vec<String> = self.tokens.keys().map(|x| x.to_string()).collect();
+        unsorted.sort_unstable_by(|x, b| {
+            self.tokens
+                .get(x)
+                .unwrap()
+                .0
+                .cmp(&self.tokens.get(b).unwrap().0)
+        });
+        unsorted
     }
 
     /**
-    Gets the term frequency of a token in the corpus.
+    Gets the raw term frequency of a token in the corpus.
     */
-    fn term_frequency(&self, token: &str) -> u32 {
+    fn get_term_frequency(&self, token: &str) -> u32 {
         self.tokens.get(token).expect("Token not found.").1
+    }
+
+    /**
+    Get the total number of documents in the corpus.
+     */
+    fn get_doc_count(&self) -> i32 {
+        self.num_documents
+    }
+
+    /**
+    Retrieve the token from a given index. A reverse lookup.
+     */
+    fn get_token_from_idx(&self, idx: usize) -> String {
+        self.tokens_as_idx[idx].to_owned()
     }
 }
 
@@ -315,72 +363,70 @@ mod tests {
 
     #[test]
     fn create_tokens_test() {
-        let mut st = SimpleTokenizer::new(100, true, Some(text::load_stop_words("english")));
+        let mut st = BagOfWords::new(100, true, Some(text::load_stop_words("english")));
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-        let mut tokens = st.get_tokens();
-        tokens.sort_unstable();
-        let mut test_data = vec!["UNK", "beep", "bob", "boop", "bot", "hello", "name"];
-        test_data.sort_unstable();
-        println!("{:?}", st.tokens);
+        let tokens = st.get_tokens();
+        let test_data = vec!["UNK", "hello", "name", "bob", "beep", "boop", "bot"];
+        println!("{:?}", tokens);
         assert_eq!(tokens, test_data);
     }
 
     #[test]
     fn encode_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
+        let mut st = BagOfWords::new(100, true, None);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
-        let mut tokens = st.get_tokens();
+        let mut tokens = st.get_tokens().clone();
         tokens.sort_unstable();
         let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
         let test_data = st.encode(&test_data[0]);
         println!("{:?}", tokens);
-        assert_eq!(test_data, Some(vec![1, 8, 9, 0]));
+        assert_eq!(test_data, Some(vec![1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]));
     }
 
-    #[test]
-    fn decode_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
-        st.create_tokens(&vec![
-            String::from("Hello, my name is bob!"),
-            String::from("Beep boop I'm a bot"),
-            String::from("Beep boop I'm a bob!"),
-        ]);
-        let mut tokens = st.get_tokens();
-        tokens.sort_unstable();
-        let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
-        let test_data = st.encode(&test_data[0]);
+    // #[test]
+    // fn decode_test() {
+    //     let mut st = BagOfWords::new(100, true, None);
+    //     st.create_tokens(&vec![
+    //         String::from("Hello, my name is bob!"),
+    //         String::from("Beep boop I'm a bot"),
+    //         String::from("Beep boop I'm a bob!"),
+    //     ]);
+    //     let mut tokens = st.get_tokens();
+    //     tokens.sort_unstable();
+    //     let test_data: Vec<String> = vec![String::from("Hello, I'm Bloop!")];
+    //     let test_data = st.encode(&test_data[0]);
 
-        assert_eq!(
-            st.decode(&test_data.unwrap()).unwrap(),
-            String::from("hello i m UNK")
-        )
-    }
+    //     assert_eq!(
+    //         st.decode(&test_data.unwrap()).unwrap(),
+    //         String::from("hello i m UNK")
+    //     )
+    // }
 
     // We want to verify it is counting DOCUMENT frequency not CORPUS frequency.
     #[test]
     fn doc_count_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
+        let mut st = BagOfWords::new(100, true, None);
         st.create_tokens(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep beep I'm a bot"),
             String::from("Beep boop I'm a bob!"),
         ]);
 
-        assert_eq!(st.term_frequency("beep"), 2);
-        assert_eq!(st.term_frequency("bob"), 2);
+        assert_eq!(st.get_term_frequency("beep"), 2);
+        assert_eq!(st.get_term_frequency("bob"), 2);
     }
 
     #[test]
     fn bigram_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
+        let mut st = BagOfWords::new(100, true, None);
         st.set_ngrams(Ngrams::Bigram);
         st.create_tokens(&vec![String::from("Hello, my name is bob!")]);
         let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob"];
@@ -394,7 +440,7 @@ mod tests {
 
     #[test]
     fn bothgram_test() {
-        let mut st = SimpleTokenizer::new(100, true, None);
+        let mut st = BagOfWords::new(100, true, None);
         st.set_ngrams(Ngrams::Both);
         st.create_tokens(&vec![String::from("Hello, my name is bob!")]);
         let mut test_data = vec![
@@ -410,7 +456,7 @@ mod tests {
 
     #[test]
     fn bothgram_with_stop_test() {
-        let mut st = SimpleTokenizer::new(
+        let mut st = BagOfWords::new(
             100,
             true,
             Some(text::stop_words::load_stop_words("english")),

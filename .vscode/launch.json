@@ -1,0 +1,121 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'rml'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "rml",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'knn'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=knn",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "knn",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'knn'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=knn",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "knn",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'csvparsing'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=csvparsing",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "csvparsing",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'simplefrequency'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=simplefrequency",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "simplefrequency",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'gentokens'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=gentokens",
+                    "--package=rml"
+                ],
+                "filter": {
+                    "name": "gentokens",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

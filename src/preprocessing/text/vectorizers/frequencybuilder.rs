@@ -50,7 +50,7 @@ impl FrequencyVectorizerBuilder {
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(
+            tokenizer: Box::new(tokenizers::BagOfWords::new(
                 max_features,
                 use_lowercase,
                 None,
@@ -108,10 +108,10 @@ mod tests {
         let builder = FrequencyVectorizerBuilder::new(12, true)
             .with_ngram_type(Ngrams::Unigram)
             .with_tfidf(false)
-            .with_tokenizer(Box::new(tokenizers::SimpleTokenizer::new(10, true, None)));
+            .with_tokenizer(Box::new(tokenizers::BagOfWords::new(10, true, None)));
         let mut vectorizer = builder.build();
         vectorizer.gen_tokens(&test_data);
-        let test = vectorizer.vectorize::<i32>(&vec![
+        let test = vectorizer.vectorize(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
@@ -121,9 +121,35 @@ mod tests {
         assert_eq!(
             test.unwrap(),
             vec![
-                vec![1, 2, 3, 4, 5],
-                vec![6, 7, 8, 9, 10, 11],
-                vec![6, 7, 8, 9, 10, 5]
+                [
+                    0.0,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.17609125905568124
+                ],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             ]
         );
     }

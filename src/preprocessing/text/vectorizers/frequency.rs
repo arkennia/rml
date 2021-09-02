@@ -21,6 +21,7 @@ use std::error::Error;
 use crate::math::norm;
 use crate::preprocessing::text::tokenizers;
 
+use super::calculate_tfidf;
 use super::frequencybuilder::FrequencyVectorizerBuilder;
 
 /// The type of ngrams to keep.
@@ -42,7 +43,7 @@ pub struct FrequencyVectorizer {
     /// The number of tokens to keep. If this is changed you must call `gen_tokens` again. Set to -1 to keep all.
     pub max_features: i32,
     // /// Make all tokens lowercase.
-    // use_lowercase: bool,
+    use_lowercase: bool,
     /// Use TFIDF to encode characters.
     use_tfidf: bool,
     /// Optionally normalize the term frequency of each vector.
@@ -60,10 +61,11 @@ impl Default for FrequencyVectorizer {
         Self {
             max_features: 10000,
             use_tfidf: false,
+            use_lowercase: true,
             norm: None,
             stop_words: None,
             ngrams: Ngrams::Unigram,
-            tokenizer: Box::new(tokenizers::SimpleTokenizer::new(10000, true, None)),
+            tokenizer: Box::new(tokenizers::BagOfWords::new(10000, true, None)),
         }
     }
 }
@@ -73,6 +75,7 @@ impl FrequencyVectorizer {
         Self {
             max_features: builder.max_features,
             use_tfidf: builder.use_tfidf,
+            use_lowercase: builder.use_lowercase,
             norm: builder.norm,
             stop_words: builder.stop_words.clone(),
             ngrams: builder.ngrams,
@@ -85,17 +88,12 @@ impl FrequencyVectorizer {
         self.tokenizer.set_stop_words(self.stop_words.take());
         self.tokenizer.set_max_tokens(self.max_features);
         self.tokenizer.set_ngrams(self.ngrams);
+        self.tokenizer.set_use_lowercase(self.use_lowercase);
         self.tokenizer.create_tokens(data);
     }
 
-    pub fn vectorize<T: From<i32>>(
-        &self,
-        input_data: &[String],
-    ) -> Result<Vec<Vec<T>>, Box<dyn Error>> {
-        let output: Vec<Vec<T>> = input_data
-            .iter()
-            .map(|x| FrequencyVectorizer::vectorize_line(&*self.tokenizer, x))
-            .collect();
+    pub fn vectorize(&self, input_data: &[String]) -> Result<Vec<Vec<f64>>, Box<dyn Error>> {
+        let output: Vec<Vec<f64>> = input_data.iter().map(|x| self.vectorize_line(x)).collect();
         Ok(output)
     }
 
@@ -103,14 +101,37 @@ impl FrequencyVectorizer {
         self.tokenizer.get_tokens()
     }
 
-    fn vectorize_line<T: From<i32>>(
-        tokenizer: &(impl tokenizers::Tokenize + ?Sized),
-        line: &str,
-    ) -> Vec<T> {
-        let i32_vec: Vec<i32> = tokenizer
+    fn vectorize_line(&self, line: &str) -> Vec<f64> {
+        let i32_vec: Vec<i32> = self
+            .tokenizer
             .encode(line)
             .expect("Error processing vector line.");
-        i32_vec.iter().map(|x| T::from(*x)).collect()
+        let mut f64_vec: Vec<f64> = i32_vec.into_iter().map(|x| x as f64).collect();
+
+        if let Some(norm) = self.norm {
+            norm::normalize_vector(&mut f64_vec, &norm);
+        }
+
+        if self.use_tfidf {
+            f64_vec = self.compute_vector_tfidf(f64_vec);
+        }
+        f64_vec
+    }
+
+    fn compute_vector_tfidf(&self, vector: Vec<f64>) -> Vec<f64> {
+        let docs_in_corpus = self.tokenizer.get_doc_count();
+
+        let mut out_vec: Vec<f64> = Vec::with_capacity(vector.len());
+        out_vec.resize(vector.len(), 0.0);
+
+        for (i, count) in vector.iter().enumerate() {
+            let docs_with_token = self
+                .tokenizer
+                .get_term_frequency(&self.tokenizer.get_token_from_idx(i));
+            out_vec[i] = calculate_tfidf(*count, docs_in_corpus, docs_with_token as i32);
+        }
+
+        out_vec
     }
 }
 
@@ -127,7 +148,7 @@ mod tests {
         ];
         let mut vectorizer = FrequencyVectorizer::default();
         vectorizer.gen_tokens(&test_data);
-        let test = vectorizer.vectorize::<i32>(&vec![
+        let test = vectorizer.vectorize(&vec![
             String::from("Hello, my name is bob!"),
             String::from("Beep boop I'm a bot"),
             String::from("Beep boop I'm a bob!"),
@@ -137,9 +158,35 @@ mod tests {
         assert_eq!(
             test.unwrap(),
             vec![
-                vec![1, 2, 3, 4, 5],
-                vec![6, 7, 8, 9, 10, 11],
-                vec![6, 7, 8, 9, 10, 5]
+                [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+            ]
+        );
+    }
+    #[test]
+    fn create_tokens_with_tfidf_test() {
+        let test_data = vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ];
+        let mut vectorizer = FrequencyVectorizer::default();
+        vectorizer.use_tfidf = true;
+        vectorizer.gen_tokens(&test_data);
+        let test = vectorizer.vectorize(&vec![
+            String::from("Hello, my name is bob!"),
+            String::from("Beep boop I'm a bot"),
+            String::from("Beep boop I'm a bob!"),
+        ]);
+
+        println!("{:?}", test);
+        assert_eq!(
+            test.unwrap(),
+            vec![
+                [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
             ]
         );
     }

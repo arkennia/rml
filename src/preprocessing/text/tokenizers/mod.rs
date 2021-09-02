@@ -18,9 +18,9 @@ Contains the tokenizers that are used by the vectorizers.
 Defines the `Tokenize` trait for creating Tokenizers.
 */
 
-pub mod simple_tokenizer;
+pub mod bag_of_words;
 
-pub use simple_tokenizer::SimpleTokenizer;
+pub use bag_of_words::BagOfWords;
 
 use super::Ngrams;
 pub trait Tokenize {
@@ -29,8 +29,11 @@ pub trait Tokenize {
     fn decode(&self, input: &[i32]) -> Option<String>;
     fn sanitize_line(&self, line: String) -> String;
     fn set_max_tokens(&mut self, max_tokens: i32);
+    fn set_use_lowercase(&mut self, use_lowercase: bool);
     fn set_stop_words(&mut self, stop_words: Option<Vec<String>>);
     fn set_ngrams(&mut self, ngrams: Ngrams);
     fn get_tokens(&self) -> Vec<String>;
-    fn term_frequency(&self, token: &str) -> u32;
+    fn get_term_frequency(&self, token: &str) -> u32;
+    fn get_doc_count(&self) -> i32;
+    fn get_token_from_idx(&self, idx: usize) -> String;
 }
