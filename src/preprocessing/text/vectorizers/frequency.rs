@@ -14,6 +14,17 @@
 
 /*!
 Frequency vectorizer module. Vectorizes text using the `max_features` most common tokens.
+
+# Example
+```rust
+use rml::preprocessing::text;
+let mut fv = text::FrequencyVectorizer::default();
+fv.max_features = 50;
+
+let data: Vec<String> = vec![String::from("Hello, world!")];
+
+fv.gen_tokens(&data);
+println!("{:?}", fv.vectorize(&data));
 */
 
 use std::error::Error;
@@ -42,7 +53,7 @@ If you want to specify a different tokenizer besides `SimpleTokenizer` use the :
 pub struct FrequencyVectorizer {
     /// The number of tokens to keep. If this is changed you must call `gen_tokens` again. Set to -1 to keep all.
     pub max_features: i32,
-    // /// Make all tokens lowercase.
+    /// Make all tokens lowercase.
     use_lowercase: bool,
     /// Use TFIDF to encode characters.
     use_tfidf: bool,
@@ -83,6 +94,9 @@ impl FrequencyVectorizer {
         }
     }
 
+    /**
+    Generate the tokens for use in vectorization. This step is required to use the vectorizer.
+    */
     pub fn gen_tokens(&mut self, data: &[String]) {
         // Move stop words into the tokenizer.
         self.tokenizer.set_stop_words(self.stop_words.take());
@@ -92,11 +106,18 @@ impl FrequencyVectorizer {
         self.tokenizer.create_tokens(data);
     }
 
+    /**
+    Turns the given text into a vector utilizing the Bag of Words technique.
+    The output is a vector containing each vector as `f64`.
+     */
     pub fn vectorize(&self, input_data: &[String]) -> Result<Vec<Vec<f64>>, Box<dyn Error>> {
         let output: Vec<Vec<f64>> = input_data.iter().map(|x| self.vectorize_line(x)).collect();
         Ok(output)
     }
 
+    /**
+    Retrieves the tokens from the tokenizer. They are sorted according to index in the hashmap.
+     */
     pub fn get_tokens(&self) -> Vec<String> {
         self.tokenizer.get_tokens()
     }
@@ -184,9 +205,35 @@ mod tests {
         assert_eq!(
             test.unwrap(),
             vec![
-                [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+                [
+                    0.0,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.17609125905568124,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.17609125905568124
+                ],
+                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             ]
         );
     }

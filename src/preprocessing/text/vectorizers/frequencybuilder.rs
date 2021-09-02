@@ -108,7 +108,8 @@ mod tests {
         let builder = FrequencyVectorizerBuilder::new(12, true)
             .with_ngram_type(Ngrams::Unigram)
             .with_tfidf(false)
-            .with_tokenizer(Box::new(tokenizers::BagOfWords::new(10, true, None)));
+            .with_tokenizer(Box::new(tokenizers::BagOfWords::new(10, true, None)))
+            .with_tfidf(true);
         let mut vectorizer = builder.build();
         vectorizer.gen_tokens(&test_data);
         let test = vectorizer.vectorize(&vec![
