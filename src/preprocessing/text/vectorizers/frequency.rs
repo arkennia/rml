@@ -45,7 +45,7 @@ pub struct FrequencyVectorizer {
     // use_lowercase: bool,
     /// Use TFIDF to encode characters.
     use_tfidf: bool,
-    /// Optionally normalize each vector.
+    /// Optionally normalize the term frequency of each vector.
     norm: Option<norm::Norm>,
     /// Optionally remove the contained stop words.
     stop_words: Option<Vec<String>>,

@@ -36,9 +36,9 @@ assert_eq!(t, test_data);
 ```
 */
 
-use crate::preprocessing::text::Ngrams;
 use crate::preprocessing::text::regexes;
 use crate::preprocessing::text::tokenizers;
+use crate::preprocessing::text::Ngrams;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -122,7 +122,10 @@ impl SimpleTokenizer {
     */
     fn create_ngrams(&self, mut line: Vec<String>) -> Vec<String> {
         if let Some(stop_words) = &self.stop_words {
-            line = line.into_iter().filter(|x| !stop_words.contains(x)).collect();
+            line = line
+                .into_iter()
+                .filter(|x| !stop_words.contains(x))
+                .collect();
         }
 
         match self.ngrams {
@@ -132,7 +135,7 @@ impl SimpleTokenizer {
         }
     }
 
-    fn compute_bigrams(line: &Vec<String>) -> Vec<String> {
+    fn compute_bigrams(line: &[String]) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
         for i in 0..line.len() - 1 {
             output.push(line[i].to_string() + " " + &line[i + 1].to_string());
@@ -147,7 +150,6 @@ impl SimpleTokenizer {
         output.extend(line);
         output
     }
-
 }
 
 impl tokenizers::Tokenize for SimpleTokenizer {
@@ -218,6 +220,9 @@ impl tokenizers::Tokenize for SimpleTokenizer {
     /**
     Turn the given integer slice into a string matching the corrrect features,
     or place an `UNK` token for unknowns.
+
+    If the ngrams and/or stop words options are used, this will not output a correct
+    string. Due to the tokenizer removing all punctuation, it will also not have any punctuation output.
 
     # Note
     If the `create_tokens` function was not called before this one, it will return none.
@@ -377,15 +382,13 @@ mod tests {
     fn bigram_test() {
         let mut st = SimpleTokenizer::new(100, true, None);
         st.set_ngrams(Ngrams::Bigram);
-        st.create_tokens(&vec![
-            String::from("Hello, my name is bob!"),
-        ]);
+        st.create_tokens(&vec![String::from("Hello, my name is bob!")]);
         let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob"];
         test_data.sort_unstable();
 
         let mut st_tokens = st.get_tokens();
         st_tokens.sort_unstable();
-                
+
         assert_eq!(st_tokens, test_data);
     }
 
@@ -393,31 +396,33 @@ mod tests {
     fn bothgram_test() {
         let mut st = SimpleTokenizer::new(100, true, None);
         st.set_ngrams(Ngrams::Both);
-        st.create_tokens(&vec![
-            String::from("Hello, my name is bob!"),
-        ]);
-        let mut test_data = vec!["UNK", "hello my", "my name", "name is", "is bob", "hello", "my", "name", "is", "bob"];
+        st.create_tokens(&vec![String::from("Hello, my name is bob!")]);
+        let mut test_data = vec![
+            "UNK", "hello my", "my name", "name is", "is bob", "hello", "my", "name", "is", "bob",
+        ];
         test_data.sort_unstable();
 
         let mut st_tokens = st.get_tokens();
         st_tokens.sort_unstable();
-                
+
         assert_eq!(st_tokens, test_data);
     }
 
     #[test]
     fn bothgram_with_stop_test() {
-        let mut st = SimpleTokenizer::new(100, true, Some(text::stop_words::load_stop_words("english")));
+        let mut st = SimpleTokenizer::new(
+            100,
+            true,
+            Some(text::stop_words::load_stop_words("english")),
+        );
         st.set_ngrams(Ngrams::Both);
-        st.create_tokens(&vec![
-            String::from("Hello, my name is bob!"),
-        ]);
+        st.create_tokens(&vec![String::from("Hello, my name is bob!")]);
         let mut test_data = vec!["UNK", "bob", "hello", "hello name", "name", "name bob"];
         test_data.sort_unstable();
 
         let mut st_tokens = st.get_tokens();
         st_tokens.sort_unstable();
-                
+
         assert_eq!(st_tokens, test_data);
     }
 }
