@@ -18,11 +18,11 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use rml::preprocessing::text;
 
-const DATASIZES: [i32; 5] = [50, 100, 1000, 10000, 1000000];
+const DATASIZES: [i32; 3] = [50, 100, 1000];
 
 pub fn tokenizer_bench(c: &mut Criterion) {
     let mut group = c.benchmark_group("IMDB Tokenization");
-    group.sample_size(25);
+    group.sample_size(10);
 
     let data = text::csv::parse_csv_with_labels::<String, String>(
         "./data/test_data/IMDB_Dataset.csv",

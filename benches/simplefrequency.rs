@@ -16,13 +16,13 @@
 // along with rml.  If not, see <https://www.gnu.org/licenses/>.
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use rml::math::norm;
 use rml::preprocessing::text;
+use rml::preprocessing::text::vectorizers::Ngrams;
 
 const DATASIZES: [i32; 4] = [50, 100, 1000, 10000];
 
 pub fn vectorizer_bench(c: &mut Criterion) {
-    let mut fv = text::FrequencyVectorizer::default();
-    fv.max_features = 50;
     let mut group = c.benchmark_group("IMDB Vectorization");
     group.sample_size(50);
 
@@ -35,8 +35,11 @@ pub fn vectorizer_bench(c: &mut Criterion) {
     let data = text::flatten(data.0);
 
     for i in DATASIZES {
-        let mut fv = text::FrequencyVectorizer::default();
-        fv.max_features = i;
+        let mut fv = text::FrequencyVectorizerBuilder::new(i, true)
+            .with_ngram_type(Ngrams::Both)
+            .with_norm(norm::Norm::L2)
+            .with_tfidf(true)
+            .build();
         fv.gen_tokens(&data);
         println!("{:?}", fv.max_features);
         println!("{:?}", fv.get_tokens());

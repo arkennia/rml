@@ -31,20 +31,10 @@ use std::error::Error;
 
 use crate::math::norm;
 use crate::preprocessing::text::tokenizers;
+use crate::preprocessing::text::vectorizers::Ngrams;
 
 use super::calculate_tfidf;
 use super::frequencybuilder::FrequencyVectorizerBuilder;
-
-/// The type of ngrams to keep.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Ngrams {
-    /// Single words only.
-    Unigram,
-    /// Dual words.
-    Bigram,
-    /// Both 1-gram and 2-grams.
-    Both,
-}
 
 /**
 The frequency vectorizer vectorizes text using the most common(highest frequency) tokens.

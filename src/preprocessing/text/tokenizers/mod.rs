@@ -27,7 +27,7 @@ pub trait Tokenize {
     fn create_tokens(&mut self, data: &[String]);
     fn encode(&self, input: &str) -> Option<Vec<i32>>;
     fn decode(&self, input: &[i32]) -> Option<String>;
-    fn sanitize_line(&self, line: String) -> String;
+    // fn sanitize_line(&self, line: String) -> String;
     fn set_max_tokens(&mut self, max_tokens: i32);
     fn set_use_lowercase(&mut self, use_lowercase: bool);
     fn set_stop_words(&mut self, stop_words: Option<Vec<String>>);

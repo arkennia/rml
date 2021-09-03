@@ -19,6 +19,7 @@ use sane defaults.
 */
 
 use super::frequency::*;
+use crate::preprocessing::text::vectorizers::Ngrams;
 use crate::{math::norm, preprocessing::text::tokenizers};
 
 /**

@@ -110,6 +110,7 @@ impl BagOfWords {
             let mut hashmap = hashmap.to_owned();
             hashmap.retain(|x, _b| token_keys.contains(&x));
             // Add the unknown token to the hashmap of tokens.
+            hashmap = self.adjust_indexes(hashmap);
             hashmap.insert(UNKNOWN_STR.to_string(), (UNKNOWN_IDX, 0));
 
             // Move hashmap to the tokenizer.
@@ -120,6 +121,16 @@ impl BagOfWords {
             // Move hashmap to the tokenizer.
             self.tokens = hashmap;
         }
+    }
+
+    fn adjust_indexes(
+        &self,
+        mut hashmap: HashMap<String, (usize, u32)>,
+    ) -> HashMap<String, (usize, u32)> {
+        for (i, k) in hashmap.iter_mut().enumerate() {
+            k.1 .0 = i + 1;
+        }
+        hashmap
     }
 
     /**
@@ -156,6 +167,39 @@ impl BagOfWords {
         output.extend(line);
         output
     }
+
+    /**
+    Remove all punctuation.
+    */
+    fn sanitize_data<'a>(&self, mut data: &'a [&'a str]) -> &'a [&'a str] {
+        if self.use_lowercase {
+            data.iter_mut().for_each(|x| {
+                x.trim();
+                x.make_ascii_lowercase()
+            });
+        }
+        data.iter_mut()
+            .for_each(|line| line = &mut &*regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, " "));
+        data.iter_mut()
+            .for_each(|line| line = &mut &*regexes::PUNCT_AT_END.replace_all(&line, ""));
+        data.iter_mut()
+            .for_each(|line| line = &mut &*regexes::PUNCT_RM_U85_BR.replace_all(&line, " "));
+        data.iter_mut()
+            .for_each(|line| line = &mut &*regexes::DOUBLE_WHITESPACE.replace_all(&line, " "));
+
+        data.iter_mut()
+            .for_each(|line| line = &mut &*regexes::PUNCT_NOT_AT_END.replace_all(&line, " "));
+        // let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, " ");
+        // let line = regexes::PUNCT_AT_END.replace_all(&line, "");
+        // let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
+        // let line = regexes::DOUBLE_WHITESPACE.replace_all(&line, " ");
+
+        // regexes::PUNCT_NOT_AT_END
+        //     .replace_all(&line, " ")
+        //     .into_owned()
+
+        data
+    }
 }
 
 impl tokenizers::Tokenize for BagOfWords {
@@ -172,15 +216,15 @@ impl tokenizers::Tokenize for BagOfWords {
         self.num_documents = data.len() as i32;
 
         for entry in data {
-            let trimmed_entry = &entry.trim().to_string();
-            // Extend the line vector with the strings contained in the split string.
-            line.extend(
-                self.sanitize_line(trimmed_entry.to_string())
-                    .split(' ')
-                    .into_iter()
-                    .map(|x| x.to_string())
-                    .collect::<Vec<String>>(),
-            );
+            // let trimmed_entry = &entry.trim().to_string();
+            // // Extend the line vector with the strings contained in the split string.
+            // line.extend(
+            //     self.sanitize_line(trimmed_entry.to_string())
+            //         .split(' ')
+            //         .into_iter()
+            //         .map(|x| x.to_string())
+            //         .collect::<Vec<String>>(),
+            // );
             line = self.create_ngrams(line);
             for x in &line {
                 // If this token, x, has already been seen in this document, do not count it.
@@ -218,7 +262,7 @@ impl tokenizers::Tokenize for BagOfWords {
                         continue;
                     }
                 }
-                output[self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0 as usize] += 1;
+                output[self.tokens.get(x).unwrap_or(&(UNKNOWN_IDX, 0)).0] += 1;
             }
             Some(output)
         } else {
@@ -267,26 +311,6 @@ impl tokenizers::Tokenize for BagOfWords {
      */
     fn decode(&self, _input: &[i32]) -> Option<String> {
         None
-    }
-
-    /**
-    Remove all punctuation.
-    */
-    fn sanitize_line(&self, line: String) -> String {
-        let mut line: String = line;
-
-        if self.use_lowercase {
-            line.make_ascii_lowercase();
-        }
-
-        let line = regexes::PUNCT_RM_CONTRACTIONS.replace_all(&line, " ");
-        let line = regexes::PUNCT_AT_END.replace_all(&line, "");
-        let line = regexes::PUNCT_RM_U85_BR.replace_all(&line, " ");
-        let line = regexes::DOUBLE_WHITESPACE.replace_all(&line, " ");
-
-        regexes::PUNCT_NOT_AT_END
-            .replace_all(&line, " ")
-            .into_owned()
     }
 
     /**

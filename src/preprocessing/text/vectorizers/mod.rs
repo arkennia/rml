@@ -24,6 +24,17 @@ pub use frequency::*;
 pub use frequencybuilder::FrequencyVectorizerBuilder;
 pub use hashing::*;
 
+/// The type of ngrams to keep.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ngrams {
+    /// Single words only.
+    Unigram,
+    /// Dual words.
+    Bigram,
+    /// Both 1-gram and 2-grams.
+    Both,
+}
+
 pub fn calculate_tfidf(count_in_doc: f64, docs_in_corpus: i32, docs_containing_token: i32) -> f64 {
     if count_in_doc == 0.0 {
         return 0.0;
