@@ -95,64 +95,64 @@ impl FrequencyVectorizerBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn create_tokens_test() {
-        let test_data = vec![
-            String::from("Hello, my name is bob!"),
-            String::from("Beep boop I'm a bot"),
-            String::from("Beep boop I'm a bob!"),
-        ];
-        let builder = FrequencyVectorizerBuilder::new(12, true)
-            .with_ngram_type(Ngrams::Unigram)
-            .with_tfidf(false)
-            .with_tokenizer(Box::new(tokenizers::BagOfWords::new(10, true, None)))
-            .with_tfidf(true);
-        let mut vectorizer = builder.build();
-        vectorizer.gen_tokens(&test_data);
-        let test = vectorizer.vectorize(&vec![
-            String::from("Hello, my name is bob!"),
-            String::from("Beep boop I'm a bot"),
-            String::from("Beep boop I'm a bob!"),
-        ]);
-        println!("{:?}", vectorizer.get_tokens());
-        println!("{:?}", test);
-        assert_eq!(
-            test.unwrap(),
-            vec![
-                [
-                    0.0,
-                    0.17609125905568124,
-                    0.17609125905568124,
-                    0.17609125905568124,
-                    0.17609125905568124,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.17609125905568124
-                ],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            ]
-        );
-    }
-}
+//     #[test]
+//     fn create_tokens_test() {
+//         let test_data = vec![
+//             String::from("Hello, my name is bob!"),
+//             String::from("Beep boop I'm a bot"),
+//             String::from("Beep boop I'm a bob!"),
+//         ];
+//         let builder = FrequencyVectorizerBuilder::new(12, true)
+//             .with_ngram_type(Ngrams::Unigram)
+//             .with_tfidf(false)
+//             .with_tokenizer(Box::new(tokenizers::BagOfWords::new(10, true, None)))
+//             .with_tfidf(true);
+//         let mut vectorizer = builder.build();
+//         vectorizer.gen_tokens(&test_data);
+//         let test = vectorizer.vectorize(&vec![
+//             String::from("Hello, my name is bob!"),
+//             String::from("Beep boop I'm a bot"),
+//             String::from("Beep boop I'm a bob!"),
+//         ]);
+//         println!("{:?}", vectorizer.get_tokens());
+//         println!("{:?}", test);
+//         assert_eq!(
+//             test.unwrap(),
+//             vec![
+//                 [
+//                     0.0,
+//                     0.17609125905568124,
+//                     0.17609125905568124,
+//                     0.17609125905568124,
+//                     0.17609125905568124,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0
+//                 ],
+//                 [
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.0,
+//                     0.17609125905568124
+//                 ],
+//                 [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+//             ]
+//         );
+//     }
+// }

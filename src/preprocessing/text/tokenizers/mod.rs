@@ -24,8 +24,8 @@ pub use bag_of_words::BagOfWords;
 
 use super::Ngrams;
 pub trait Tokenize {
-    fn create_tokens(&mut self, data: &[String]);
-    fn encode(&self, input: &str) -> Option<Vec<i32>>;
+    fn create_tokens(&mut self, data: &Vec<String>);
+    fn encode(&self, input: &Vec<String>) -> Option<Vec<Vec<i32>>>;
     fn decode(&self, input: &[i32]) -> Option<String>;
     // fn sanitize_line(&self, line: String) -> String;
     fn set_max_tokens(&mut self, max_tokens: i32);
